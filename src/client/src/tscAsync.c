@@ -40,6 +40,16 @@ static void tscProcessAsyncRetrieveImpl(void *param, TAOS_RES *tres, int numOfRo
  */
 static void tscProcessAsyncFetchRowsProxy(void *param, TAOS_RES *tres, int numOfRows);
 
+/*
+*异步API函数,异步执行SQL语句
+*异步API采用非阻塞调用模式。
+*taos：是创建的数据库连接结构体指针
+*sqlstr：是需要执行的SQL语句
+*fp：是用户定义的回调函数指针；
+*    param：是应用提供一个用于回调的参数
+*    TAOS_RES:该参数返回查询的结果集指针
+*    code：用于指示操作是否成功，0表示成功，负数表示失败（调用taos_errstr获取失败原因）
+*/
 void taos_query_a(TAOS *taos, char *sqlstr, void (*fp)(void *, TAOS_RES *, int), void *param) {
   STscObj *pObj = (STscObj *)taos;
   if (pObj == NULL || pObj->signature != pObj) {
@@ -190,6 +200,17 @@ static void tscProcessAsyncContinueRetrieve(void *param, TAOS_RES *tres, int num
   tscProcessAsyncRetrieveImpl(param, tres, numOfRows, tscProcessAsyncRetrieve);
 }
 
+/*
+*异步API函数，批量获取异步查询的结果集，只能和taos_query_a配合使用
+*res：是taos_query_a回调时返回的结果集结构体指针
+*fp：回调函数
+*     param：用户可定义的传递给回调函数的参数结构体指针
+*     numOfRows：表明有fetch数据返回的行数，不是本次查询满足条件的全部元组数量。
+*
+*在回调函数中，应用可以通过调用taos_fetch_row前向迭代获取批量记录中每一行记录。
+*读完一块内的所有记录后，应用需要在回调函数中继续调用taos_fetch_rows_a获取下一批记录进行处理，
+*直到返回的记录数（numOfRows）为零（结果返回完成）或记录数为负值（查询出错）。
+*/
 void taos_fetch_rows_a(TAOS_RES *taosa, void (*fp)(void *, TAOS_RES *, int), void *param) {
   SSqlObj *pSql = (SSqlObj *)taosa;
   if (pSql == NULL || pSql->signature != pSql) {
@@ -224,6 +245,13 @@ void taos_fetch_rows_a(TAOS_RES *taosa, void (*fp)(void *, TAOS_RES *, int), voi
   tscProcessSql(pSql);
 }
 
+/*
+*异步获取一条记录
+*res：是taos_query_a回调时返回的结果集结构体指针。
+*fp：为回调函数。
+*     param：是应用提供的一个用于回调的参数。
+*     TAOS_ROW：回调时，第三个参数TAOS_ROW指向一行记录。
+*/
 void taos_fetch_row_a(TAOS_RES *taosa, void (*fp)(void *, TAOS_RES *, TAOS_ROW), void *param) {
   SSqlObj *pSql = (SSqlObj *)taosa;
   if (pSql == NULL || pSql->signature != pSql) {

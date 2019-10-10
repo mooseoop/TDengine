@@ -124,6 +124,12 @@ TAOS *taos_connect_imp(char *ip, char *user, char *pass, char *db, int port, voi
   return pObj;
 }
 
+/*
+*创建数据库连接，初始化连接上下文
+*IP：ip地址；user：用户名；pass：密码；db：数据库名字；Port：端口号
+*用户没有提供数据库名字也可以正常连接，用户可以通过该连接创建新的数据库；
+*如果用户提供了数据库名字，则说明数据库已经创建好，缺省使用该数据库。
+*/
 TAOS *taos_connect(char *ip, char *user, char *pass, char *db, int port) {
   if (ip != NULL && (strcmp("127.0.0.1", ip) == 0 || strcasecmp("localhost", ip) == 0)) {
     ip = tsServerIpStr;

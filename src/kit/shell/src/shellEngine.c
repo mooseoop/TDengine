@@ -247,6 +247,7 @@ void shellRunCommandOnServer(TAOS *con, char command[]) {
 
   st = taosGetTimestampUs();
 
+  //执行sql语句，command是sql语句，con是数据库连接，sql是在server端执行
   if (taos_query(con, command)) {
     taos_error(con);
     return;
@@ -285,6 +286,7 @@ void shellRunCommandOnServer(TAOS *con, char command[]) {
 }
 
 /* Function to do regular expression check */
+/* 正则表达式检查功能 */
 int regex_match(const char *s, const char *reg, int cflags) {
   regex_t regex;
   char    msgbuf[100];

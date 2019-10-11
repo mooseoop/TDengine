@@ -29,6 +29,10 @@
 #include "ttimer.h"
 #include "tutil.h"
 
+/*
+*TD connect API接口实现，实现taos.h头文件
+*/
+
 TAOS *taos_connect_imp(char *ip, char *user, char *pass, char *db, int port, void (*fp)(void *, TAOS_RES *, int),
                        void *param, void **taos) {
   STscObj *pObj;

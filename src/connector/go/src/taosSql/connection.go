@@ -220,7 +220,7 @@ func (mc *taosConn) Exec(query string, args []driver.Value) (driver.Result, erro
 	
 	mc.affectedRows = 0
 	mc.insertId     = 0
-	_, err := mc.taosQuery(query)
+	_, err := mc.taosQuery(query)	//执行SQL语句
 	if err == nil {
 		return &taosSqlResult{
 			affectedRows: int64(mc.affectedRows),

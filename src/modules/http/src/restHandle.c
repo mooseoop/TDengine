@@ -57,6 +57,10 @@ bool restProcessLoginRequest(HttpContext* pContext) {
   return true;
 }
 
+/*
+*restFul API接口执行SQL
+*从http的Post请求的body中获取sql
+*/
 bool restProcessSqlRequest(HttpContext* pContext, int timestampFmt) {
   httpTrace("context:%p, fd:%d, ip:%s, user:%s, process restful sql msg", pContext, pContext->fd, pContext->ipstr,
             pContext->user);

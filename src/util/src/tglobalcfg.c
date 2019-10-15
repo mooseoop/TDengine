@@ -29,6 +29,10 @@
 #include "tsystem.h"
 #include "tutil.h"
 
+/*
+* TDengine全局配置管理模块
+*/
+
 // system info, not configurable
 int64_t tsPageSize;
 int64_t tsOpenMax;
@@ -46,7 +50,9 @@ float tsMinimalDataDirGB = 0.5;
 int32_t tsTotalMemoryMB = 0;
 int32_t tsVersion = 0;
 
-// global, not configurable
+/* global, not configurable
+* 全局变量，非来自配置
+*/
 int tscEmbedded = 0;
 
 /*
@@ -151,7 +157,7 @@ int debugFlag = 131;
 int odbcdebugFlag = 131;
 int qdebugFlag = 131;
 
-SGlobalConfig *tsGlobalConfig = NULL;
+SGlobalConfig *tsGlobalConfig = NULL;   //全局配置指针变量
 int            tsGlobalConfigNum = 0;
 
 char *tsGlobalUnit[] = {
@@ -373,6 +379,9 @@ void tsInitConfigOption(SGlobalConfig *cfg, char *name, void *ptr, int8_t valTyp
   cfg->cfgStatus = TSDB_CFG_CSTATUS_NONE;
 }
 
+/*
+* 初始化全局配置
+*/
 void tsInitGlobalConfig() {
   if (tsGlobalConfig != NULL) return;
 
@@ -593,6 +602,9 @@ void tsInitGlobalConfig() {
   tsGlobalConfigNum = (int)(cfg - tsGlobalConfig);
 }
 
+/*
+* 读取全局配置
+*/
 void tsReadGlobalLogConfig() {
   tsInitGlobalConfig();
 

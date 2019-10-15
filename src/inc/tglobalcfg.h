@@ -216,6 +216,9 @@ enum {
   TSDB_CFG_UTYPE_MS
 };
 
+/*
+* 全局配置对象结构
+*/
 typedef struct {
   char *   option;
   void *   ptr;

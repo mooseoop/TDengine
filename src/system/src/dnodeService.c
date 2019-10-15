@@ -33,7 +33,9 @@
 #include "tsdb.h"
 #include "vnode.h"
 
-/* Termination handler */
+/* Termination handler 
+* 终止处理
+*/
 void signal_handler(int signum, siginfo_t *sigInfo, void *context) {
   if (signum == SIGUSR1) {
     tsCfgDynamicOptions("debugFlag 135");
@@ -43,27 +45,29 @@ void signal_handler(int signum, siginfo_t *sigInfo, void *context) {
     tsCfgDynamicOptions("resetlog");
     return;
   }
-  syslog(LOG_INFO, "Shut down signal is %d", signum);
+  syslog(LOG_INFO, "Shut down signal is %d", signum);     //日志输出程序终止信号
   syslog(LOG_INFO, "Shutting down TDengine service...");
   // clean the system.
   dPrint("shut down signal is %d, sender PID:%d", signum, sigInfo->si_pid);
-  dnodeCleanUpSystem();
+  dnodeCleanUpSystem();   //TDengine系统释放
   // close the syslog
   syslog(LOG_INFO, "Shut down TDengine service successfully");
   dPrint("TDengine is shut down!");
   closelog();
-  exit(EXIT_SUCCESS);
+  exit(EXIT_SUCCESS);   //终止主程序运行，正常退出
 }
 
 int main(int argc, char *argv[]) {
-  // Set global configuration file
+  /* Set global configuration file
+  * 设置全局配置文件
+  */
   for (int i = 1; i < argc; ++i) {
     if (strcmp(argv[i], "-c") == 0) {
       if (i < argc - 1) {
-        strcpy(configDir, argv[++i]);
+        strcpy(configDir, argv[++i]);     //从启动参数中获取TD配置文件目录，赋值给configDir
       } else {
         printf("'-c' requires a parameter, default:%s\n", configDir);
-        exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);   //程序异常退出
       }
     } else if (strcmp(argv[i], "-V") == 0) {
       printf("version: %s compatible_version: %s\n", version, compatible_version);
@@ -73,31 +77,37 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  /* Set termination handler. */
-  struct sigaction act;
-  act.sa_flags = SA_SIGINFO;
-  act.sa_sigaction = signal_handler;
-  sigaction(SIGTERM, &act, NULL);
-  sigaction(SIGHUP, &act, NULL);
-  sigaction(SIGINT, &act, NULL);
-  sigaction(SIGUSR1, &act, NULL);
+  /* Set termination handler. 
+  * 设置程序终止处理
+  */
+  struct sigaction act;   //信号处理方式结构定义
+  act.sa_flags = SA_SIGINFO;  //指定信号flags
+  act.sa_sigaction = signal_handler;  //指向终止处理函数
+
+  //注册修改指定信号（SIGTERM）相关联的处理动作，参数1：要蒱获的信号类型，参数2：指定新的信号处理方式，参数3：输出先前信号的处理方式
+  sigaction(SIGTERM, &act, NULL);   //发送给本程序的终止请求信号
+  sigaction(SIGHUP, &act, NULL);    //挂起信号
+  sigaction(SIGINT, &act, NULL);    //中断信号，如Ctrl-C
+  sigaction(SIGUSR1, &act, NULL);   
   sigaction(SIGUSR2, &act, NULL);
-  // sigaction(SIGABRT, &act, NULL);
+  // sigaction(SIGABRT, &act, NULL);  程序异常终止信号
 
   // Open /var/log/syslog file to record information.
-  openlog("TDengine:", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_LOCAL1);
-  syslog(LOG_INFO, "Starting TDengine service...");
+  openlog("TDengine:", LOG_PID | LOG_CONS | LOG_NDELAY, LOG_LOCAL1);  //创建log文件，记录日志信息
+  syslog(LOG_INFO, "Starting TDengine service...");   //启动TDengine 服务，输出日志信息
 
-  // Initialize the system
+  /* Initialize the system
+  * TDengine系统初始化
+  */
   if (dnodeInitSystem() < 0) {
-    syslog(LOG_ERR, "Error initialize TDengine system");
+    syslog(LOG_ERR, "Error initialize TDengine system");  //TDengine系统初始化失败
     closelog();
 
-    dnodeCleanUpSystem();
-    exit(EXIT_FAILURE);
+    dnodeCleanUpSystem();   //TDengine系统释放
+    exit(EXIT_FAILURE);     //终止主程序执行，异常推出
   }
 
-  syslog(LOG_INFO, "Started TDengine service successfully.");
+  syslog(LOG_INFO, "Started TDengine service successfully.");   //TDengine系统启动成功
 
   while (1) {
     sleep(1000);

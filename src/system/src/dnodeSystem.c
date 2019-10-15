@@ -94,16 +94,21 @@ void dnodeCheckDbRunning(const char* dir) {
   }
 }
 
+/*
+* TDengine系统初始化
+*/
 int dnodeInitSystem() {
   char        temp[128];
   struct stat dirstat;
 
   taosResolveCRC();
 
-  tsRebootTime = taosGetTimestampSec();
+  tsRebootTime = taosGetTimestampSec();   //获取时间戳，赋值给全局变量，记录系统启动时间。
   tscEmbedded = 1;
 
-  // Read global configuration.
+  /* Read global configuration.
+  * 读取全局配置
+  */
   tsReadGlobalLogConfig();
 
   if (stat(logDir, &dirstat) < 0) mkdir(logDir, 0755);

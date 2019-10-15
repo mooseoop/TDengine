@@ -27,13 +27,15 @@
 #include "tsocket.h"
 #include "vnode.h"
 
-// internal global, not configurable
+/* internal global, not configurable
+* 内部全局变量，不是来自配置
+*/
 void *   vnodeTmrCtrl;
 void **  rpcQhandle;
 void *   dmQhandle;
 void *   queryQhandle;
 int      tsMaxQueues;
-uint32_t tsRebootTime;
+uint32_t tsRebootTime;    //系统启动时间戳
 
 int vnodeInitSystem() {
   int numOfThreads;

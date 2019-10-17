@@ -37,7 +37,7 @@
 int64_t tsPageSize;
 int64_t tsOpenMax;
 int64_t tsStreamMax;
-int32_t tsNumOfCores = 1;
+int32_t tsNumOfCores = 1;     //系统核数
 float tsTotalLogDirGB = 0;
 float tsTotalTmpDirGB = 0;
 float tsTotalDataDirGB = 0;
@@ -65,46 +65,46 @@ int64_t tsMsPerDay[] = {86400000L, 86400000000L};
 short tsMgmtShellPort = 6030;   // udp[6030-6034] tcp[6030]
 short tsVnodeShellPort = 6035;  // udp[6035-6039] tcp[6035]
 
-int tsStatusInterval = 1;         // second
-int tsShellActivityTimer = 3;     // second
+int tsStatusInterval = 1;         // second，状态间隔
+int tsShellActivityTimer = 3;     // second，Shell活动时间
 int tsVnodePeerHBTimer = 1;       // second
 int tsMgmtPeerHBTimer = 1;        // second
-int tsMeterMetaKeepTimer = 7200;  // second
-int tsMetricMetaKeepTimer = 600;  // second
+int tsMeterMetaKeepTimer = 7200;  // second，测量单元保持时间
+int tsMetricMetaKeepTimer = 600;  // second，
 
-float tsNumOfThreadsPerCore = 1.0;
+float tsNumOfThreadsPerCore = 1.0;  //每核线程数
 float tsRatioOfQueryThreads = 0.5;
-char  tsInternalIp[TSDB_IPv4ADDR_LEN] = {0};
+char  tsInternalIp[TSDB_IPv4ADDR_LEN] = {0};    //server ip地址
 char  tsServerIpStr[TSDB_IPv4ADDR_LEN] = "0.0.0.0";
-short tsNumOfVnodesPerCore = 8;
-short tsNumOfTotalVnodes = 0;
+short tsNumOfVnodesPerCore = 8;     //每核Vnodes数
+short tsNumOfTotalVnodes = 0;       //总的Vnodes数
 short tsCheckHeaderFile = 0;
 
-int tsSessionsPerVnode = 1000;
-int tsCacheBlockSize = 16384;  // 256 columns
-int tsAverageCacheBlocks = 4;
+int tsSessionsPerVnode = 1000;      //每Vnode的会话数
+int tsCacheBlockSize = 16384;       // 256 columns
+int tsAverageCacheBlocks = 4;       //平均缓存块数
 
-int   tsRowsInFileBlock = 4096;
-float tsFileBlockMinPercent = 0.05;
+int   tsRowsInFileBlock = 4096;     //一个文件块中的行数
+float tsFileBlockMinPercent = 0.05; //
 
-short tsNumOfBlocksPerMeter = 100;
-short tsCommitTime = 3600;  // seconds
+short tsNumOfBlocksPerMeter = 100;  //每次计算的块数
+short tsCommitTime = 3600;  // seconds，提交时间
 short tsCommitLog = 1;
 short tsCompression = 2;
-short tsDaysPerFile = 10;
-int   tsDaysToKeep = 3650;
+short tsDaysPerFile = 10;   //一个文件多少天
+int   tsDaysToKeep = 3650;  //数据保留天数
 
 int  tsMaxShellConns = 2000;
-int  tsMaxUsers = 1000;
-int  tsMaxDbs = 1000;
-int  tsMaxTables = 650000;
-int  tsMaxDnodes = 1000;
-int  tsMaxVGroups = 1000;
+int  tsMaxUsers = 1000;     //最大用户数
+int  tsMaxDbs = 1000;       //最大Db数
+int  tsMaxTables = 650000;  //最大Tables数
+int  tsMaxDnodes = 1000;    //最大Dnode数
+int  tsMaxVGroups = 1000;   //最大VGroups数
 
 char tsLocalIp[TSDB_IPv4ADDR_LEN] = "0.0.0.0";
-char tsDefaultDB[TSDB_DB_NAME_LEN] = {0};
-char tsDefaultUser[64] = "root";
-char tsDefaultPass[64] = "taosdata";
+char tsDefaultDB[TSDB_DB_NAME_LEN] = {0};   //默认DB
+char tsDefaultUser[64] = "root";            //默认user
+char tsDefaultPass[64] = "taosdata";        //默认pass
 int  tsMaxMeterConnections = 10000;
 int  tsMaxMgmtConnections = 2000;
 int  tsMaxVnodeConnections = 10000;
@@ -114,15 +114,15 @@ int tsEnableMonitorModule = 1;
 int tsRestRowLimit = 10240;
 
 int tsTimePrecision = TSDB_TIME_PRECISION_MILLI;  // time precision, millisecond by default
-int tsMinSlidingTime = 10;                        // 10 ms for sliding time, the value will changed in
+int tsMinSlidingTime = 10;                        // 最小滑窗时间，默认10毫秒，10 ms for sliding time, the value will changed in
                                                   // case of time precision changed
-int tsMinIntervalTime = 10;                       // 10 ms for interval time range, changed accordingly
-int tsMaxStreamComputDelay = 20000;               // 20sec, the maximum value of stream
+int tsMinIntervalTime = 10;                       // 最小间隔时间，默认10毫秒，10 ms for interval time range, changed accordingly
+int tsMaxStreamComputDelay = 20000;               // 流计算延迟最大值，默认20秒，20sec, the maximum value of stream
                                                   // computing delay, changed accordingly
-int tsStreamCompStartDelay = 10000;               // 10sec, the first stream computing delay
+int tsStreamCompStartDelay = 10000;               // 系统启动后第一个流计算延迟时间，默认10秒，10sec, the first stream computing delay
                                                   // time after system launched successfully,
                                                   // changed accordingly
-int tsStreamCompRetryDelay = 10;                  // the stream computing delay time after
+int tsStreamCompRetryDelay = 10;                  // 执行失败后流计算延迟时间，the stream computing delay time after
                                                   // executing failed, change accordingly
 
 int     tsProjectExecInterval = 10000;   // every 10sec, the projection will be executed once
@@ -138,14 +138,14 @@ int tsHttpEnableCompress = 0;
 int tsTelegrafUseFieldNum = 0;
 
 char tsMonitorDbName[] = "log";
-int  tsMonitorInterval = 30;  // seconds
+int  tsMonitorInterval = 30;  // seconds，监控间隔时间，默认30秒
 char tsInternalPass[] = "secretkey";
 
 char tsTimezone[64] = {0};
 char tsLocale[TSDB_LOCALE_LEN] = {0};
 char tsCharset[TSDB_LOCALE_LEN] = {0};  // default encode string
 
-int tsNumOfLogLines = 10000000;
+int tsNumOfLogLines = 10000000;         //日志文件记录行数
 int ddebugFlag = 131;
 int mdebugFlag = 135;
 int sdbDebugFlag = 135;
@@ -157,8 +157,8 @@ int debugFlag = 131;
 int odbcdebugFlag = 131;
 int qdebugFlag = 131;
 
-SGlobalConfig *tsGlobalConfig = NULL;   //全局配置指针变量
-int            tsGlobalConfigNum = 0;
+SGlobalConfig *tsGlobalConfig = NULL;   //全局配置项对象指针变量
+int            tsGlobalConfigNum = 0;   //全局配置项数目
 
 char *tsGlobalUnit[] = {
     " ", "(%)", "(GB)", "(MB)", "(Mb)", "(byte)", "(s)", "(ms)",
@@ -297,11 +297,16 @@ void tsReadStrConfig(SGlobalConfig *cfg, char *input_value) {
   }
 }
 
+/*
+* 读取log类型的配置项
+* *option：配置项
+* value：配置项的值
+*/
 void tsReadLogOption(char *option, char *value) {
   for (int i = 0; i < tsGlobalConfigNum; ++i) {
     SGlobalConfig *cfg = tsGlobalConfig + i;
     if (!(cfg->cfgType & TSDB_CFG_CTYPE_B_CONFIG) || !(cfg->cfgType & TSDB_CFG_CTYPE_B_LOG)) continue;
-    if (strcasecmp(cfg->option, option) != 0) continue;
+    if (strcasecmp(cfg->option, option) != 0) continue;   //判断是否和option的配置项name相等
 
     switch (cfg->valType) {
       case TSDB_CFG_VTYPE_INT:
@@ -366,29 +371,40 @@ void tsReadConfigOption(char *option, char *value) {
   }
 }
 
+/*
+* 初始化某个配置项信息
+* *cfg：配置项指针变量，指向初始化的配置项
+*/
 void tsInitConfigOption(SGlobalConfig *cfg, char *name, void *ptr, int8_t valType, int8_t cfgType, float minVal,
                         float maxVal, uint8_t ptrLength, int8_t unitType) {
-  cfg->option = name;
-  cfg->ptr = ptr;
-  cfg->valType = valType;
-  cfg->cfgType = cfgType;
-  cfg->minValue = minVal;
-  cfg->maxValue = maxVal;
-  cfg->ptrLength = ptrLength;
-  cfg->unitType = unitType;
-  cfg->cfgStatus = TSDB_CFG_CSTATUS_NONE;
+  cfg->option = name;               //配置项名称
+  cfg->ptr = ptr;                   //指针指向配置项值
+  cfg->valType = valType;           //值类型，如：是ip地址类型
+  cfg->cfgType = cfgType;           //配置项功能类型，如：配置项从配置文件获取，可以使用命令查看配置项等
+  cfg->minValue = minVal;           //最小值
+  cfg->maxValue = maxVal;           //最大值
+  cfg->ptrLength = ptrLength;       //值长度，字节长度
+  cfg->unitType = unitType;         //配置项值的单位，如：GB，MB，Second等
+  cfg->cfgStatus = TSDB_CFG_CSTATUS_NONE;   //配置项状态，如：使用系统默认配置，配置来自文件等
 }
 
 /*
-* 初始化全局配置
+* 初始化全局配置项
+* 使用系统默认的配置项参数初始化
 */
 void tsInitGlobalConfig() {
   if (tsGlobalConfig != NULL) return;
 
+  //给全局配置对象动态分配内存，按照全局配置对象最大数目（TSDB_CFG_MAX_NUM）分配内存，tsGlobalConfig指向内存头
   tsGlobalConfig = (SGlobalConfig *)malloc(sizeof(SGlobalConfig) * TSDB_CFG_MAX_NUM);
-  memset(tsGlobalConfig, 0, sizeof(SGlobalConfig) * TSDB_CFG_MAX_NUM);
+  memset(tsGlobalConfig, 0, sizeof(SGlobalConfig) * TSDB_CFG_MAX_NUM);    //初始化设置内存空间为0
 
-  SGlobalConfig *cfg = tsGlobalConfig;
+  SGlobalConfig *cfg = tsGlobalConfig;    //指针变量cfg，指向全局配置对象内存空间头
+
+  /*
+  * 初始化各个全局配置项的信息
+  * 把值设置到cfg的全局配置内存中
+  */
 
   // ip address
   tsInitConfigOption(cfg++, "internalIp", tsInternalIp, TSDB_CFG_VTYPE_IPSTR,
@@ -410,20 +426,23 @@ void tsInitGlobalConfig() {
                      TSDB_CFG_CTYPE_B_CONFIG | TSDB_CFG_CTYPE_B_SHOW | TSDB_CFG_CTYPE_B_CLIENT, 1, 65535, 0,
                      TSDB_CFG_UTYPE_NONE);
 
-  // directory
+  // directory，配置文件目录
   tsInitConfigOption(cfg++, "configDir", configDir, TSDB_CFG_VTYPE_DIRECTORY, TSDB_CFG_CTYPE_B_CLIENT, 0, 0,
                        TSDB_FILENAME_LEN, TSDB_CFG_UTYPE_NONE);
 #ifdef LINUX
+  //dirtctory，数据目录
   tsInitConfigOption(cfg++, "dataDir", dataDir, TSDB_CFG_VTYPE_DIRECTORY, TSDB_CFG_CTYPE_B_CONFIG, 0, 0,
                      TSDB_FILENAME_LEN, TSDB_CFG_UTYPE_NONE);
 #endif
+  //日志目录
   tsInitConfigOption(cfg++, "logDir", logDir, TSDB_CFG_VTYPE_DIRECTORY,
                      TSDB_CFG_CTYPE_B_CONFIG | TSDB_CFG_CTYPE_B_LOG | TSDB_CFG_CTYPE_B_CLIENT, 0, 0, TSDB_FILENAME_LEN,
                      TSDB_CFG_UTYPE_NONE);
+  //脚本文件目录
   tsInitConfigOption(cfg++, "scriptDir", scriptDir, TSDB_CFG_VTYPE_DIRECTORY, TSDB_CFG_CTYPE_B_CONFIG, 0, 0,
                      TSDB_FILENAME_LEN, TSDB_CFG_UTYPE_NONE);
 
-  // dnode configs
+  // dnode configs，数据节点配置
   tsInitConfigOption(cfg++, "numOfThreadsPerCore", &tsNumOfThreadsPerCore, TSDB_CFG_VTYPE_FLOAT,
                      TSDB_CFG_CTYPE_B_CONFIG | TSDB_CFG_CTYPE_B_CLIENT, 0, 10, 0, TSDB_CFG_UTYPE_NONE);
   tsInitConfigOption(cfg++, "ratioOfQueryThreads", &tsRatioOfQueryThreads, TSDB_CFG_VTYPE_FLOAT,
@@ -599,17 +618,14 @@ void tsInitGlobalConfig() {
   tsInitConfigOption(cfg++, "version", version, TSDB_CFG_VTYPE_STRING, TSDB_CFG_CTYPE_B_SHOW | TSDB_CFG_CTYPE_B_CLIENT,
                      0, 0, 0, TSDB_CFG_UTYPE_NONE);
 
-  tsGlobalConfigNum = (int)(cfg - tsGlobalConfig);
+  tsGlobalConfigNum = (int)(cfg - tsGlobalConfig);    //计算配置项数目
 }
 
-/*
-* 读取全局配置
-*/
 void tsReadGlobalLogConfig() {
   tsInitGlobalConfig();
 
   FILE * fp;
-  char * line, *option, *value;
+  char * line, *option, *value;   //*line：读取的一行，*option：配置项名，*value：配置项的值。
   size_t len;
   int    olen, vlen;
   char   fileName[128];
@@ -628,7 +644,7 @@ void tsReadGlobalLogConfig() {
   wordfree(&full_path);
 
   sprintf(fileName, "%s/taos.cfg", configDir);
-  fp = fopen(fileName, "r");
+  fp = fopen(fileName, "r");    //打开配置文件
   if (fp == NULL) {
     printf("option file:%s not found, all options are set to system default\n", fileName);
     tsReadLogOption("logDir", logDir);
@@ -637,11 +653,11 @@ void tsReadGlobalLogConfig() {
 
   line = NULL;
   while (!feof(fp)) {
-    tfree(line);
+    tfree(line);    //初始化line
     line = option = value = NULL;
     len = olen = vlen = 0;
 
-    getline(&line, &len, fp);
+    getline(&line, &len, fp);   //读取配置文件的一行，内容读入line，len表示字节长度，fp是打开的配置文件对象
     if (line == NULL) break;
 
     paGetToken(line, &option, &olen);
@@ -655,20 +671,25 @@ void tsReadGlobalLogConfig() {
     tsReadLogOption(option, value);
   }
 
-  tfree(line);
-  fclose(fp);
+  tfree(line);  //初始化line
+  fclose(fp); //关闭配置文件
 }
 
+/*
+* 读取全局配置项，初始化全局配置项
+*/
 bool tsReadGlobalConfig() {
-  tsInitGlobalConfig();
+  tsInitGlobalConfig();   //使用系统默认设置初始化全局配置项
 
   FILE * fp;
-  char * line, *option, *value, *value1;
+  char * line, *option, *value, *value1;  //*line：读取的一行，*option：配置项name，*value：配置项的值
   size_t len;
   int    olen, vlen, vlen1;
   char   fileName[128];
 
   sprintf(fileName, "%s/taos.cfg", configDir);
+  
+  //打开全局配置文件taos.cfg
   fp = fopen(fileName, "r");
   if (fp == NULL) {
     // printf("option file:%s not there, all options are set to system default\n", fileName);
@@ -676,11 +697,11 @@ bool tsReadGlobalConfig() {
   } else {
     line = NULL;
     while (!feof(fp)) {
-      tfree(line);
+      tfree(line);    //初始化line
       line = option = value = NULL;
       len = olen = vlen = 0;
 
-      getline(&line, &len, fp);
+      getline(&line, &len, fp);   //从文件fp读取一行到line，长度为len
       if (line == NULL) break;
 
       paGetToken(line, &option, &olen);
@@ -695,7 +716,7 @@ bool tsReadGlobalConfig() {
       // dataDir    /mnt/disk1    0
       paGetToken(value + vlen + 1, &value1, &vlen1);
 
-      tsReadConfigOption(option, value);
+      tsReadConfigOption(option, value);  //使用配置文件中的配置值设置系统全局配置项
     }
 
     tfree(line);
@@ -781,6 +802,9 @@ int tsCfgDynamicOptions(char *msg) {
   return code;
 }
 
+/*
+* 打印输出全局配置项信息
+*/
 void tsPrintGlobalConfig() {
   pPrint("   taos config & system info:");
   pPrint("==================================");

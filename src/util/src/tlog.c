@@ -97,6 +97,11 @@ int taosStartLog() {
   return 0;
 }
 
+/*
+* 初始化日志文件
+* *logname：日志文件名
+* numOfLogLines：日志文件记录日志行数
+*/
 int taosInitLog(char *logName, int numOfLogLines, int maxFiles) {
   logHandle = taosLogBuffNew(TSDB_DEFAULT_LOG_BUF_SIZE);
   if (logHandle == NULL) return -1;

@@ -182,6 +182,7 @@ void tsSetTimeZone();
 void tsSetLocale();
 void tsInitGlobalConfig();
 
+//配置项功能类型
 #define TSDB_CFG_CTYPE_B_CONFIG 1   // can be configured from file
 #define TSDB_CFG_CTYPE_B_SHOW 2     // can displayed by "show configs" commands
 #define TSDB_CFG_CTYPE_B_LOG 4      // is a log type configuration
@@ -189,46 +190,49 @@ void tsInitGlobalConfig();
 #define TSDB_CFG_CTYPE_B_OPTION 16  // can be configured by taos_options function
 #define TSDB_CFG_CTYPE_B_NOT_PRINT 32
 
+//配置项状态
 #define TSDB_CFG_CSTATUS_NONE 0     // not configured
 #define TSDB_CFG_CSTATUS_DEFAULT 1  // use system default value
 #define TSDB_CFG_CSTATUS_FILE 2     // configured from file
 #define TSDB_CFG_CSTATUS_OPTION 3   // configured by taos_options function
 #define TSDB_CFG_CSTATUS_ARG 4      // configured by program argument
 
+//配置项值类型枚举
 enum {
-  TSDB_CFG_VTYPE_SHORT,
+  TSDB_CFG_VTYPE_SHORT,           //short类型，如IP端口信息
   TSDB_CFG_VTYPE_INT,
   TSDB_CFG_VTYPE_UINT,
   TSDB_CFG_VTYPE_FLOAT,
   TSDB_CFG_VTYPE_STRING,
-  TSDB_CFG_VTYPE_IPSTR,
-  TSDB_CFG_VTYPE_DIRECTORY,
+  TSDB_CFG_VTYPE_IPSTR,           //ip地址类型
+  TSDB_CFG_VTYPE_DIRECTORY,       //目录地址类型
 };
 
+//配置项值单位枚举，如GB，MB，Second
 enum {
-  TSDB_CFG_UTYPE_NONE,
-  TSDB_CFG_UTYPE_PERCENT,
+  TSDB_CFG_UTYPE_NONE,            //无单位
+  TSDB_CFG_UTYPE_PERCENT,         //百分比
   TSDB_CFG_UTYPE_GB,
   TSDB_CFG_UTYPE_MB,
   TSDB_CFG_UTYPE_Mb,
   TSDB_CFG_UTYPE_BYTE,
-  TSDB_CFG_UTYPE_SECOND,
-  TSDB_CFG_UTYPE_MS
+  TSDB_CFG_UTYPE_SECOND,          //秒
+  TSDB_CFG_UTYPE_MS               //毫秒
 };
 
 /*
-* 全局配置对象结构
+* 全局配置项对象结构体类型，描述某个配置项的信息
 */
 typedef struct {
-  char *   option;
-  void *   ptr;
-  float    minValue;
-  float    maxValue;
-  int8_t   cfgType;
-  int8_t   cfgStatus;
-  int8_t   unitType;
-  int8_t   valType;
-  uint32_t ptrLength;
+  char *   option;          //配置项名称
+  void *   ptr;             //指针指向配置项值
+  float    minValue;        //最小值
+  float    maxValue;        //最大值
+  int8_t   cfgType;         //配置项功能类型，如：配置项从配置文件获取，可以使用命令查看配置项等
+  int8_t   cfgStatus;       //配置项状态，如：使用系统默认配置，配置来自文件等
+  int8_t   unitType;        //配置项值的单位，如：GB，MB，Second等
+  int8_t   valType;         //值类型，如：是ip地址类型
+  uint32_t ptrLength;       //值长度，字节长度
 } SGlobalConfig;
 
 extern SGlobalConfig *tsGlobalConfig;
@@ -236,7 +240,7 @@ extern int            tsGlobalConfigNum;
 extern char *         tsCfgStatusStr[];
 SGlobalConfig *tsGetConfigOption(char *option);
 
-#define TSDB_CFG_MAX_NUM    110
+#define TSDB_CFG_MAX_NUM    110     //全局配置项对象的最大数目，配置文件cfg中最大有多少项
 #define TSDB_CFG_PRINT_LEN  23
 #define TSDB_CFG_OPTION_LEN 24
 #define TSDB_CFG_VALUE_LEN  41

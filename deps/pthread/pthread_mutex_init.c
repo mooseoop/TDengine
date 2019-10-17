@@ -37,7 +37,9 @@
 #include "pthread.h"
 #include "implement.h"
 
-
+/*
+* 线程互斥锁初始化
+*/
 int
 pthread_mutex_init (pthread_mutex_t * mutex, const pthread_mutexattr_t * attr)
 {

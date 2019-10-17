@@ -33,11 +33,11 @@
 #include "tsdb.h"
 #include "tutil.h"
 
-char configDir[TSDB_FILENAME_LEN] = "/etc/taos";
+char configDir[TSDB_FILENAME_LEN] = "/etc/taos";      //配置文件目录
 char tsDirectory[TSDB_FILENAME_LEN] = "/var/lib/taos";
-char dataDir[TSDB_FILENAME_LEN] = "/var/lib/taos";
-char logDir[TSDB_FILENAME_LEN] = "/var/log/taos";
-char scriptDir[TSDB_FILENAME_LEN] = "/etc/taos";
+char dataDir[TSDB_FILENAME_LEN] = "/var/lib/taos";    //TD数据目录
+char logDir[TSDB_FILENAME_LEN] = "/var/log/taos";     //日志文件目录
+char scriptDir[TSDB_FILENAME_LEN] = "/etc/taos";      //脚本文件目录
 
 int64_t str2int64(char *str) {
   char *endptr = NULL;

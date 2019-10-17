@@ -38,6 +38,10 @@ bool            tsDnodeStopping = false;
 
 void dnodeCountRequest(SCountInfo *info);
 
+/*
+* 初始化TD系统的模块
+* 有http模块/monitor模块
+*/
 void dnodeInitModules() {
   tsModule[TSDB_MOD_HTTP].name = "http";
   tsModule[TSDB_MOD_HTTP].initFp = httpInitSystem;
@@ -73,6 +77,9 @@ void dnodeCleanUpSystem() {
   taosCloseLogger();
 }
 
+/*
+* 创建TD的数据文件目录
+*/
 void taosCreateTierDirectory() {
   char fileName[128];
 
@@ -83,11 +90,15 @@ void taosCreateTierDirectory() {
   mkdir(fileName, 0755);
 }
 
+/*
+* 创建TD数据库运行文件.running
+* 文件为只写模式，建立互斥锁定，限定被一个进程访问
+*/
 void dnodeCheckDbRunning(const char* dir) {
   char filepath[256] = {0};
-  sprintf(filepath, "%s/.running", dir);
-  int fd = open(filepath, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO);
-  int ret = flock(fd, LOCK_EX | LOCK_NB);
+  sprintf(filepath, "%s/.running", dir);  //创建数据库运行文件.running
+  int fd = open(filepath, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO); //创建只写文件.running
+  int ret = flock(fd, LOCK_EX | LOCK_NB);   //建立互斥锁定，一个文件只有一个互斥锁定，被一个进程访问。
   if (ret != 0) {
     dError("failed to lock file:%s ret:%d, database may be running, quit", filepath, ret);
     exit(0);
@@ -99,7 +110,7 @@ void dnodeCheckDbRunning(const char* dir) {
 */
 int dnodeInitSystem() {
   char        temp[128];
-  struct stat dirstat;
+  struct stat dirstat;  //文件状态信息的结构体
 
   taosResolveCRC();
 
@@ -107,12 +118,19 @@ int dnodeInitSystem() {
   tscEmbedded = 1;
 
   /* Read global configuration.
-  * 读取全局配置
+  * 读取全局log类的配置项
   */
   tsReadGlobalLogConfig();
 
-  if (stat(logDir, &dirstat) < 0) mkdir(logDir, 0755);
+  /*
+  * 检测日志文件的状态信息
+  * 文件信息保存在dirstat结构体中
+  */
+  if (stat(logDir, &dirstat) < 0) mkdir(logDir, 0755);    //创建TD日志目录
 
+  /*
+  * 初始化TD的日志文件 
+  */
   sprintf(temp, "%s/taosdlog", logDir);
   if (taosInitLog(temp, tsNumOfLogLines, 1) < 0) printf("failed to init log file\n");
 
@@ -122,27 +140,28 @@ int dnodeInitSystem() {
     return -1;
   }
 
-  strcpy(tsDirectory, dataDir);
+  strcpy(tsDirectory, dataDir); //把TD的数据目录复制到tsDirectory
   if (stat(dataDir, &dirstat) < 0) {
-    mkdir(dataDir, 0755);
+    mkdir(dataDir, 0755);             //检测数据目录，不存在则创建数据目录
   }
 
-  taosCreateTierDirectory();
+  taosCreateTierDirectory();    //创建TD的数据库文件tsdb和
 
-  sprintf(mgmtDirectory, "%s/mgmt", tsDirectory);
-  sprintf(tsDirectory, "%s/tsdb", dataDir);
-  dnodeCheckDbRunning(dataDir);
+  sprintf(mgmtDirectory, "%s/mgmt", tsDirectory);   //设置TD管理目录
+  sprintf(tsDirectory, "%s/tsdb", dataDir);         
+  dnodeCheckDbRunning(dataDir);   //创建TD数据物理节点文件.running并加互斥锁定，限定一个进程访问，.running文件是只写文件
 
   tsPrintGlobalConfig();
   dPrint("Server IP address is:%s", tsInternalIp);
 
-  signal(SIGPIPE, SIG_IGN);
+  signal(SIGPIPE, SIG_IGN);   //系统调用，一种特殊的中断；SIGPIPE：管道破裂，写一个没有读端口的管道。
 
-  dnodeInitModules();
-  pthread_mutex_init(&dmutex, NULL);
+  dnodeInitModules(); //初始化物理节点的http模块和monitor模块
+  pthread_mutex_init(&dmutex, NULL);  //线程互斥锁初始化
 
   dPrint("starting to initialize TDengine engine ...");
 
+  //循环初始化TD系统的模块http模块和monitor模块
   for (int mod = 0; mod < TSDB_MOD_MAX; ++mod) {
     if (tsModule[mod].num != 0 && tsModule[mod].initFp) {
       if ((*tsModule[mod].initFp)() != 0) {

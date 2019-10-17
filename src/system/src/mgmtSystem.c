@@ -31,7 +31,7 @@
 #include "vnode.h"
 
 // global, not configurable
-char         mgmtDirectory[128];
+char         mgmtDirectory[128];    //TD的管理目录
 void *       mgmtTmr;
 void *       mgmtQhandle;
 void *       mgmtTranQhandle = NULL;

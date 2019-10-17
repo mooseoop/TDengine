@@ -117,8 +117,8 @@ typedef struct rpc_server {
 
 // configurable
 int rpcDebugFlag = 131;
-int tsRpcTimer = 300;
-int tsRpcMaxTime = 600;  // seconds;
+int tsRpcTimer = 300; //Rpc时间，毫秒
+int tsRpcMaxTime = 600;  // Rpc最大时间，seconds;
 int tsRpcProgressTime = 10;  // milliseocnds
 
 // not configurable

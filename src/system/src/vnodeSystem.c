@@ -37,10 +37,14 @@ void *   queryQhandle;
 int      tsMaxQueues;
 uint32_t tsRebootTime;    //系统启动时间戳
 
+/*
+* vnode节点初始化系统
+*/
 int vnodeInitSystem() {
   int numOfThreads;
 
-  numOfThreads = tsRatioOfQueryThreads * tsNumOfCores * tsNumOfThreadsPerCore;
+  //线程数 = tsRatioOfQueryThreads * 系统核数（来自系统信息） * 每核线程数（来自配置信息）
+  numOfThreads = tsRatioOfQueryThreads * tsNumOfCores * tsNumOfThreadsPerCore;  
   if (numOfThreads < 1) numOfThreads = 1;
   queryQhandle = taosInitScheduler(tsNumOfVnodesPerCore * tsNumOfCores * tsSessionsPerVnode, numOfThreads, "query");
 

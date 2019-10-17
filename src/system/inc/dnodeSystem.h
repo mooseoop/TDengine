@@ -24,12 +24,15 @@ extern "C" {
 
 enum _module { TSDB_MOD_HTTP, TSDB_MOD_MONITOR, TSDB_MOD_MAX };
 
+/*
+* 模块对象
+*/
 typedef struct {
-  char  *name;
-  int  (*initFp)();
-  void (*cleanUpFp)();
-  int  (*startFp)();
-  void (*stopFp)();
+  char  *name;              //模块名称
+  int  (*initFp)();         //模块初始化函数指针
+  void (*cleanUpFp)();      //模块清除函数指针
+  int  (*startFp)();        //模块启动函数指针
+  void (*stopFp)();         //模块停止函数指针
   int    num;
   int    curNum;
   int    equalVnodeNum;

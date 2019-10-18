@@ -109,8 +109,8 @@ int  tsMaxMeterConnections = 10000;
 int  tsMaxMgmtConnections = 2000;
 int  tsMaxVnodeConnections = 10000;
 
-int tsEnableHttpModule = 1;
-int tsEnableMonitorModule = 1;
+int tsEnableHttpModule = 1;           //dnode节点http模块开关
+int tsEnableMonitorModule = 1;        //dnode节点monitor模块开关
 int tsRestRowLimit = 10240;
 
 int tsTimePrecision = TSDB_TIME_PRECISION_MILLI;  // time precision, millisecond by default

@@ -145,7 +145,7 @@ int dnodeInitSystem() {
     mkdir(dataDir, 0755);             //检测数据目录，不存在则创建数据目录
   }
 
-  taosCreateTierDirectory();    //创建TD的数据库文件tsdb和
+  taosCreateTierDirectory();    //创建TD的数据库文件目录tsdb和data
 
   sprintf(mgmtDirectory, "%s/mgmt", tsDirectory);   //设置TD管理目录
   sprintf(tsDirectory, "%s/tsdb", dataDir);         
@@ -161,7 +161,7 @@ int dnodeInitSystem() {
 
   dPrint("starting to initialize TDengine engine ...");
 
-  //循环初始化TD系统的模块http模块和monitor模块
+  //循环执行dnode节点的模块http和monitor的init函数
   for (int mod = 0; mod < TSDB_MOD_MAX; ++mod) {
     if (tsModule[mod].num != 0 && tsModule[mod].initFp) {
       if ((*tsModule[mod].initFp)() != 0) {
@@ -171,18 +171,22 @@ int dnodeInitSystem() {
     }
   }
 
+  //vnode节点初始化
   if (vnodeInitSystem() != 0) {
     dError("TDengine vnodes initialization failed");
     return -1;
   }
 
+  //管理功能初始化
   if (mgmtInitSystem() != 0) {
     dError("TDengine mgmt initialization failed");
     return -1;
   }
 
+  //把监控模块的统计请求函数指向-->dnode的统计请求函数
   monitorCountReqFp = dnodeCountRequest;
 
+  //循环执行http/monitor模块的启动函数
   for (int mod = 0; mod < TSDB_MOD_MAX; ++mod) {
     if (tsModule[mod].num != 0 && tsModule[mod].startFp) {
       if ((*tsModule[mod].startFp)() != 0) {

@@ -59,7 +59,7 @@ void signal_handler(int signum, siginfo_t *sigInfo, void *context) {
 
 int main(int argc, char *argv[]) {
   /* Set global configuration file
-  * 设置全局配置文件
+  * 设置全局配置文件目录
   */
   for (int i = 1; i < argc; ++i) {
     if (strcmp(argv[i], "-c") == 0) {

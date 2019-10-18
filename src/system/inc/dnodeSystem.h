@@ -22,7 +22,7 @@ extern "C" {
 
 #include <stdint.h>
 
-enum _module { TSDB_MOD_HTTP, TSDB_MOD_MONITOR, TSDB_MOD_MAX };
+enum _module { TSDB_MOD_HTTP, TSDB_MOD_MONITOR, TSDB_MOD_MAX };   //不同模块的枚举
 
 /*
 * 模块对象

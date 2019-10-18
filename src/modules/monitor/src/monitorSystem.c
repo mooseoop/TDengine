@@ -68,7 +68,7 @@ void monitorInitDatabaseCb(void *param, TAOS_RES *result, int code);
 void monitorStartTimer();
 void monitorSaveSystemInfo();
 void monitorSaveLog(int level, const char *const format, ...);
-void (*monitorCountReqFp)(SCountInfo *info) = NULL;
+void (*monitorCountReqFp)(SCountInfo *info) = NULL;     //监控统计请求函数指针
 void monitorExecuteSQL(char *sql);
 
 void monitorCheckDiskUsage(void *para, void *unused) {

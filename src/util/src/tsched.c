@@ -41,6 +41,13 @@ typedef struct {
 void *taosProcessSchedQueue(void *param);
 void taosCleanUpScheduler(void *param);
 
+/*
+ *  初始化任务队列
+ *  queueSize：任务队列大小
+ *  numOfThreads：线程数
+ *  *label：是指针变量，指向char类型，任务队列名称
+ *  函数名前的*：表示函数返回一个地址值，函数返回初始化好的任务队列地址。
+*/
 void *taosInitScheduler(int queueSize, int numOfThreads, const char *label) {
   pthread_attr_t attr;
   SSchedQueue *  pSched = (SSchedQueue *)malloc(sizeof(SSchedQueue));

@@ -26,6 +26,9 @@
 
 #pragma GCC diagnostic ignored "-Wint-conversion"
 
+/*
+ * 检查文件的是否正确
+ */
 int vnodeCheckFileIntegrity(FILE* fp) {
   /*
     int savedSessions, savedMeterSize;
@@ -286,6 +289,9 @@ SSqlFunctionExpr* vnodeCreateSqlFunctionExpr(SQueryMeterMsg* pQueryMsg, int32_t*
   return pExprs;
 }
 
+/*
+ * vnode判断vnodecfg对象是否有效
+ */
 bool vnodeIsValidVnodeCfg(SVnodeCfg* pCfg) {
   if (pCfg == NULL) return false;
 

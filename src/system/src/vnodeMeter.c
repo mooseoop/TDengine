@@ -31,7 +31,7 @@
 
 #define VALID_TIMESTAMP(key, curKey, prec) (((key) >= 0) && ((key) <= ((curKey) + 36500 * tsMsPerDay[prec])))
 
-int  tsMeterSizeOnFile;
+int  tsMeterSizeOnFile;     //文件中测量占用的字节大小
 void vnodeUpdateMeter(void *param, void *tmdId);
 void vnodeRecoverMeterObjectFile(int vnode);
 
@@ -93,6 +93,11 @@ int vnodeCreateMeterObjFile(int vnode) {
   return 0;
 }
 
+/*
+ * 为vonde节点创建测量对象文件
+ * /var/lib/taos/tsdb/vnode1/meterObj.v1
+ * 读写方式打开文件，将文件指针指向文件头
+ */
 FILE *vnodeOpenMeterObjFile(int vnode) {
   FILE *      fp;
   char        fileName[TSDB_FILENAME_LEN];
@@ -105,7 +110,7 @@ FILE *vnodeOpenMeterObjFile(int vnode) {
   sprintf(fileName, "%s/vnode%d/meterObj.v%d", tsDirectory, vnode, vnode);
   if (stat(fileName, &fstat) < 0) return NULL;
 
-  fp = fopen(fileName, "r+");
+  fp = fopen(fileName, "r+");   //读写方式打开文件
   if (fp != NULL) {
     if (vnodeCheckFileIntegrity(fp) < 0) {
       dError("file:%s is corrupted, need to restore it first", fileName);
@@ -289,7 +294,7 @@ int vnodeRestoreMeterObj(char *buffer, int64_t length) {
   SMeterObj *pSavedObj, *pObj;
   int        size;
 
-  pSavedObj = (SMeterObj *)buffer;
+  pSavedObj = (SMeterObj *)buffer;  //vnode测量对象
   if (pSavedObj->vnode < 0 || pSavedObj->vnode >= TSDB_MAX_VNODES) {
     dTrace("vid:%d is out of range, corrupted meter obj file", pSavedObj->vnode);
     return -1;
@@ -339,38 +344,52 @@ int vnodeOpenMetersVnode(int vnode) {
   char *     buffer;
   int64_t    sid;
   int64_t    offset, length;
-  SVnodeObj *pVnode = &vnodeList[vnode];
+  SVnodeObj *pVnode = &vnodeList[vnode];  //*pVnode指向vnodeList的vnode节点
 
-  fp = vnodeOpenMeterObjFile(vnode);
+  fp = vnodeOpenMeterObjFile(vnode);  //创建vnode的MeterObj文件
   if (fp == NULL) return 0;
 
-  fseek(fp, TSDB_FILE_HEADER_VERSION_SIZE, SEEK_SET);
-  fread(&(pVnode->vnodeStatistic), sizeof(SVnodeStatisticInfo), 1, fp);
+  //设置文件指针fp的位置，从SEEK_SET偏移VERSION_SIZE个字节位置
+  fseek(fp, TSDB_FILE_HEADER_VERSION_SIZE, SEEK_SET); 
+  //从fp读取1个对象，每个对象大小（SVnodeStatisticInfo，vnode统计信息对象），pVnode->vnodeStatistic指向读取的首个对象的指针
+  fread(&(pVnode->vnodeStatistic), sizeof(SVnodeStatisticInfo), 1, fp); 
 
+  //设置文件指针fp的位置，从SEEK_SET偏移HEADER长度的1/4（128）
   fseek(fp, TSDB_FILE_HEADER_LEN * 1 / 4, SEEK_SET);
+  //根据数据格式“%ld %ld %ld”，从fp中读入数据，存储到：vnode的lastCreate，lastRemove，version
   fscanf(fp, "%ld %ld %ld ", &(pVnode->lastCreate), &(pVnode->lastRemove), &(pVnode->version));
+  //根据数据格式“%ld %d %d”，从fp中读入数据，存储到：vnode的lastKeyOnFile，fileId，numOfFiles
   fscanf(fp, "%ld %d %d ", &(pVnode->lastKeyOnFile), &(pVnode->fileId), &(pVnode->numOfFiles));
 
+  //设置文件指针fp的位置，从SEEK_SET偏移HEADER长度的2/4（256）
   fseek(fp, TSDB_FILE_HEADER_LEN * 2 / 4, SEEK_SET);
+  //从fp读取1个vnodeCFG对象，pVnode->cfg指向首个vnodeCFG对象的指针
   fread(&pVnode->cfg, sizeof(SVnodeCfg), 1, fp);
+  //检查vnode的配置对象是否有效
   if (vnodeIsValidVnodeCfg(&pVnode->cfg) == false) {
     pVnode->cfg.maxSessions = 0;  // error in vnode file
     return 0;
   }
 
+  //设置文件指针fp的位置，从SEEK_SET偏移HEADER长度的3/4（384）
   fseek(fp, TSDB_FILE_HEADER_LEN * 3 / 4, SEEK_SET);
+  //从fp读取TSDB_VNODES_SUPPORT个vnode端点描述对象，pVnode->vpeers指向首个vnode的端点描述对象的指针
   fread(&pVnode->vpeers, sizeof(SVPeerDesc), TSDB_VNODES_SUPPORT, fp);
 
+  //设置文件指针fp的位置，从SEEK_SET偏移HEADER长度（512）
   fseek(fp, TSDB_FILE_HEADER_LEN, SEEK_SET);
 
+  //文件中测量占用的字节大小
   tsMeterSizeOnFile = sizeof(SMeterObj) + TSDB_MAX_COLUMNS * sizeof(SColumn) + TSDB_MAX_SAVED_SQL_LEN + sizeof(TSCKSUM);
 
   int size = sizeof(SMeterObj *) * pVnode->cfg.maxSessions;
-  pVnode->meterList = (void *)malloc(size);
+  pVnode->meterList = (void *)malloc(size);   //给vnode动态分配测量对象列表内存
   if (pVnode->meterList == NULL) return -1;
-  memset(pVnode->meterList, 0, size);
+  memset(pVnode->meterList, 0, size);   //vnode的测量对象列表内存初始化为0
+  
+  //分配测量对象头内存空间
   size = sizeof(SMeterObjHeader) * pVnode->cfg.maxSessions + sizeof(TSCKSUM);
-  pVnode->meterIndex = (SMeterObjHeader *)calloc(1, size);
+  pVnode->meterIndex = (SMeterObjHeader *)calloc(1, size);  //在内存的动态存储区中分配1个长度size的连续空间
   if (pVnode->meterIndex == NULL) {
     tfree(pVnode->meterList);
     return -1;
@@ -387,12 +406,12 @@ int vnodeOpenMetersVnode(int vnode) {
   buffer = malloc(tsMeterSizeOnFile);
   memset(buffer, 0, tsMeterSizeOnFile);
   for (sid = 0; sid < pVnode->cfg.maxSessions; ++sid) {
-    offset = pVnode->meterIndex[sid].offset;
-    length = pVnode->meterIndex[sid].length;
+    offset = pVnode->meterIndex[sid].offset;    //取每个会话的测量对象头的offset
+    length = pVnode->meterIndex[sid].length;    //取每个会话的测量对象头的length
     if (offset <= 0 || length <= 0) continue;
 
     fseek(fp, offset, SEEK_SET);
-    if (fread(buffer, length, 1, fp) <= 0) break;
+    if (fread(buffer, length, 1, fp) <= 0) break;   //按照offset和length从文件读取测量对象
     if (taosCheckChecksumWhole((uint8_t *)buffer, length)) {
       vnodeRestoreMeterObj(buffer, length - sizeof(TSCKSUM));
     } else {

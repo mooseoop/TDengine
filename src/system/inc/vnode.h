@@ -42,7 +42,7 @@ extern "C" {
 #include "vnodeFile.h"
 #include "vnodeShell.h"
 
-#define TSDB_FILE_HEADER_LEN          512
+#define TSDB_FILE_HEADER_LEN          512           //文件头长度
 #define TSDB_FILE_HEADER_VERSION_SIZE 32
 #define TSDB_CACHE_POS_BITS           13
 #define TSDB_CACHE_POS_MASK           0x1FFF
@@ -77,9 +77,12 @@ enum _meter_state {
   TSDB_METER_STATE_DELETED     = 0x18,
 };
 
+/*
+ * 测量对象头
+ */
 typedef struct {
-  int64_t offset : 48;
-  int64_t length : 16;
+  int64_t offset : 48;    //偏移量
+  int64_t length : 16;    //长度
 } SMeterObjHeader;
 
 typedef struct {
@@ -87,12 +90,15 @@ typedef struct {
   char    data[];
 } SData;
 
+/*
+ *  vnode节点对象
+ */
 typedef struct {
-  int       vnode;
-  SVnodeCfg cfg;
+  int       vnode;    //vnode节点序号
+  SVnodeCfg cfg;    //vnode的配置对象
   // SDiskDesc   tierDisk[TSDB_MAX_TIER];
   SVPeerDesc          vpeers[TSDB_VNODES_SUPPORT];
-  SVnodeStatisticInfo vnodeStatistic;
+  SVnodeStatisticInfo vnodeStatistic;   //vnode的统计信息
   char                selfIndex;
   char                status;
   char                accessState;  // Vnode access state, Readable/Writable
@@ -106,20 +112,20 @@ typedef struct {
   TSKEY commitLastKey;  // maximum key for a commit file, it shall be xxxx99999,
   // calculated fromm fileId
   int   commitFileId;
-  TSKEY lastCreate;
-  TSKEY lastRemove;
+  TSKEY lastCreate;     //最后建立
+  TSKEY lastRemove;     //最后删除
   TSKEY lastKey;  // last key for the whole vnode, updated by every insert
   // operation
-  uint64_t version;
+  uint64_t version;     //版本
 
   int   streamRole;
   int   numOfStreams;
   void *streamTimer;
 
   TSKEY           lastKeyOnFile;  // maximum key on the last file, is shall be xxxx99999
-  int             fileId;
+  int             fileId;   //字段id
   int             badFileId;
-  int             numOfFiles;
+  int             numOfFiles;   //文件数
   int             maxFiles;
   int             maxFile1;
   int             maxFile2;
@@ -147,7 +153,7 @@ typedef struct {
   int64_t         mappingThreshold;
 
   void *         commitTimer;
-  void **        meterList;
+  void **        meterList;               //测量对象列表
   void *         pCachePool;
   void *         pQueue;
   pthread_t      thread;
@@ -157,20 +163,26 @@ typedef struct {
   struct _qinfo *pQInfoList;
 
   TAOS *           dbConn;
-  SMeterObjHeader *meterIndex;
+  SMeterObjHeader *meterIndex;          //指针指向测量对象头
 } SVnodeObj;
 
+/*
+ * 列对象
+ */
 typedef struct SColumn {
   short colId;
   short bytes;
   char  type;
 } SColumn;
 
+/*
+ * 测量对象
+ */
 typedef struct _meter_obj {
   uint64_t uid;
-  char     meterId[TSDB_METER_ID_LEN];
-  int      sid;
-  short    vnode;
+  char     meterId[TSDB_METER_ID_LEN];    //字符数组meterID，长度为TSDB_METER_ID_LEN
+  int      sid;           //session ID
+  short    vnode;         //测量对象对应的vnode
   short    numOfColumns;
   short    bytesPerPoint;
   short    maxBytes;

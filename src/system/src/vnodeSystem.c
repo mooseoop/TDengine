@@ -30,11 +30,11 @@
 /* internal global, not configurable
 * 内部全局变量，不是来自配置
 */
-void *   vnodeTmrCtrl;
+void *   vnodeTmrCtrl;    //vnode定时器控制对象指针
 void **  rpcQhandle;      //全局指针，指向donde的rpc消息处理任务队列
 void *   dmQhandle;       //全局指针，指向dnode管理的mgmt任务队列
 void *   queryQhandle;    //全局指针，指向query任务队列
-int      tsMaxQueues;     //
+int      tsMaxQueues;     //最大rpc任务任务队列数
 uint32_t tsRebootTime;    //系统启动时间戳
 
 /*
@@ -46,19 +46,27 @@ int vnodeInitSystem() {
   //线程数 = tsRatioOfQueryThreads * 系统核数（来自系统信息） * 每核线程数（来自配置信息）
   numOfThreads = tsRatioOfQueryThreads * tsNumOfCores * tsNumOfThreadsPerCore;  
   if (numOfThreads < 1) numOfThreads = 1;
-  //初始化query任务队列，返回任务队列的地址
+  
+  /*
+  * 初始化query任务队列，返回任务队列的地址
+  * 任务队列大小=每核vnode数 * 系统核数 * 每vnode的会话数
+  */
   queryQhandle = taosInitScheduler(tsNumOfVnodesPerCore * tsNumOfCores * tsSessionsPerVnode, numOfThreads, "query");
 
   tsMaxQueues = (1.0 - tsRatioOfQueryThreads) * tsNumOfCores * tsNumOfThreadsPerCore / 2.0;
   if (tsMaxQueues < 1) tsMaxQueues = 1;
 
+  //rpc任务处理队列动态内存分配
   rpcQhandle = malloc(tsMaxQueues*sizeof(void *));
   for (int i = 0; i < tsMaxQueues; i++)
-    rpcQhandle[i] = taosInitScheduler(tsSessionsPerVnode, 1, "dnode");    //dnode任务队列初始化
+    //dnode任务队列初始化，任务队列大小是每vnode的会话数，1个线程
+    rpcQhandle[i] = taosInitScheduler(tsSessionsPerVnode, 1, "dnode");    
 
-  dmQhandle = taosInitScheduler(tsSessionsPerVnode, 1, "mgmt");       //mgmt任务队列初始化
+  //mgmt任务队列初始化，任务队列大小是每vnode的会话数，1个线程
+  dmQhandle = taosInitScheduler(tsSessionsPerVnode, 1, "mgmt");       
 
-  vnodeTmrCtrl = taosTmrInit(tsSessionsPerVnode + 1000, 200, 60000, "DND-vnode");
+  //DND-vnode定时器控制单元初始化，会话数+1000个定时器，定时器精度200毫秒，最大60000毫秒，返回vnode定时器控制对象指针
+  vnodeTmrCtrl = taosTmrInit(tsSessionsPerVnode + 1000, 200, 60000, "DND-vnode");   
   if (vnodeTmrCtrl == NULL) {
     dError("failed to init timer, exit");
     return -1;

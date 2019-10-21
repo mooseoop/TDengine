@@ -32,10 +32,13 @@ int vnodeCreateMeterObjFile(int vnode);
 
 int        tsMaxVnode = -1;
 int        tsOpenVnodes = 0;
-SVnodeObj *vnodeList = NULL;
+SVnodeObj *vnodeList = NULL;  //vnode节点列表指针
 
+/*
+ *  初始化vnode节点列表中的单个vnode节点
+ */
 int vnodeInitStoreVnode(int vnode) {
-  SVnodeObj *pVnode = vnodeList + vnode;
+  SVnodeObj *pVnode = vnodeList + vnode;    //获取列表中的指定vnode节点指针
 
   pVnode->vnode = vnode;
   vnodeOpenMetersVnode(vnode);
@@ -231,6 +234,11 @@ int vnodeRemoveVnode(int vnode) {
   return TSDB_CODE_SUCCESS;
 }
 
+/*
+ * 初始化vnode节点列表
+ * 动态分配vnode列表内存
+ * 分别初始化vnode列表中的每个vnode节点
+*/
 int vnodeInitStore() {
   int vnode;
   int size;

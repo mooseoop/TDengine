@@ -675,22 +675,25 @@ typedef struct {
   char     accessState;
 } SVnodeAccess;
 
-// NOTE: sizeof(SVnodeCfg) < TSDB_FILE_HEADER_LEN/4
+/*
+ * vnode节点配置对象
+ * NOTE: sizeof(SVnodeCfg) < TSDB_FILE_HEADER_LEN/4
+ */
 typedef struct {
   char     acct[TSDB_USER_LEN];
   char     db[TSDB_DB_NAME_LEN];
   uint32_t vgId;
-  int32_t  maxSessions;
-  int32_t  cacheBlockSize;
+  int32_t  maxSessions;   //vnode的最大会话数
+  int32_t  cacheBlockSize;  //缓存块字节大小
   union {
     int32_t totalBlocks;
     float   fraction;
   } cacheNumOfBlocks;
-  int32_t daysPerFile;
+  int32_t daysPerFile;  //每文件天数
 
   int32_t daysToKeep1;
   int32_t daysToKeep2;
-  int32_t daysToKeep;
+  int32_t daysToKeep;   //保持天数
 
   int32_t commitTime;
   int32_t rowsInFileBlock;
@@ -706,8 +709,11 @@ typedef struct {
   char reserved[16];
 } SVnodeCfg, SCreateDbMsg, SDbCfg, SAlterDbMsg;
 
-// IMPORTANT: sizeof(SVnodeStatisticInfo) should not exceed
-// TSDB_FILE_HEADER_LEN/4 - TSDB_FILE_HEADER_VERSION_SIZE
+/*
+ * Vnode节点统计信息
+ * IMPORTANT: sizeof(SVnodeStatisticInfo) should not exceed
+ * TSDB_FILE_HEADER_LEN/4 - TSDB_FILE_HEADER_VERSION_SIZE
+ */ 
 typedef struct {
   int64_t pointsWritten;  // In unit of points
   int64_t totalStorage;   // In unit of bytes
@@ -754,6 +760,9 @@ typedef struct {
   char cipheringKey[TSDB_KEY_LEN];
 } SSecIe;
 
+/*
+ * vnode的端点描述对象
+ */
 typedef struct {
   uint32_t ip;
   uint32_t vnode;

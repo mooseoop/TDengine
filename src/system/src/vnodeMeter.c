@@ -300,7 +300,7 @@ int vnodeRestoreMeterObj(char *buffer, int64_t length) {
     return -1;
   }
 
-  SVnodeCfg *pCfg = &vnodeList[pSavedObj->vnode].cfg;
+  SVnodeCfg *pCfg = &vnodeList[pSavedObj->vnode].cfg;   //vnode的配置对象
   if (pSavedObj->sid < 0 || pSavedObj->sid >= pCfg->maxSessions) {
     dTrace("vid:%d, sid:%d is larger than max:%d", pSavedObj->vnode, pSavedObj->sid, pCfg->maxSessions);
     return -1;
@@ -308,27 +308,27 @@ int vnodeRestoreMeterObj(char *buffer, int64_t length) {
 
   if (pSavedObj->meterId[0] == 0) return TSDB_CODE_SUCCESS;
 
-  size = sizeof(SMeterObj) + pSavedObj->sqlLen + 1;
-  pObj = (SMeterObj *)malloc(size);
+  size = sizeof(SMeterObj) + pSavedObj->sqlLen + 1; //测量对象的字节数 + sql的长度 + 1为pObj的内存大小
+  pObj = (SMeterObj *)malloc(size);   //pObj动态内存分配，内存构成：前面时测量对象（MeterObj），后面是sql字符串
   if (pObj == NULL) {
     dError("vid:%d sid:%d, no memory to allocate", pSavedObj->vnode, pSavedObj->sid);
     return TSDB_CODE_SERV_OUT_OF_MEMORY;
   }
 
-  memcpy(pObj, pSavedObj, offsetof(SMeterObj, reserved));
+  memcpy(pObj, pSavedObj, offsetof(SMeterObj, reserved));   //从pSaveOb拷贝 offsetof（）个字节数据 到pObj
   vnodeList[pSavedObj->vnode].meterList[pSavedObj->sid] = pObj;
-  pObj->numOfQueries = 0;
-  pObj->pCache = vnodeAllocateCacheInfo(pObj);
+  pObj->numOfQueries = 0;     //查询任务数
+  pObj->pCache = vnodeAllocateCacheInfo(pObj);  //指针指向为查询对象分配的cache内存地址
   pObj->pStream = NULL;
-  pObj->schema = (SColumn *)malloc(pSavedObj->numOfColumns * sizeof(SColumn));
-  memcpy(pObj->schema, buffer + offsetof(SMeterObj, reserved), pSavedObj->numOfColumns * sizeof(SColumn));
+  pObj->schema = (SColumn *)malloc(pSavedObj->numOfColumns * sizeof(SColumn));  //为测量任务的列头信息分配内存
+  memcpy(pObj->schema, buffer + offsetof(SMeterObj, reserved), pSavedObj->numOfColumns * sizeof(SColumn));  //从buffer中拷贝列头信息到pObj的schema
   pObj->state = TSDB_METER_STATE_READY;
 
   if (pObj->sqlLen > 0)
-    memcpy((char *)pObj + sizeof(SMeterObj),
-           ((char *)pSavedObj) + offsetof(SMeterObj, reserved) + sizeof(SColumn) * pSavedObj->numOfColumns,
-           pSavedObj->sqlLen);
-  pObj->pSql = (char *)pObj + sizeof(SMeterObj);
+    memcpy((char *)pObj + sizeof(SMeterObj),    //指针偏移到测量对象之后，后面是sql部分
+           ((char *)pSavedObj) + offsetof(SMeterObj, reserved) + sizeof(SColumn) * pSavedObj->numOfColumns, //从pSaveObj对象的测量对象+保留位+列头位置开始拷贝
+           pSavedObj->sqlLen);    //拷贝长度是pSaveObj的sql长度
+  pObj->pSql = (char *)pObj + sizeof(SMeterObj);    //*pSql指向 MeterObj对象后面的Sql内存地址
 
   pObj->lastKey = pObj->lastKeyOnFile;
   if (pObj->lastKey > vnodeList[pObj->vnode].lastKey) vnodeList[pObj->vnode].lastKey = pObj->lastKey;

@@ -116,6 +116,10 @@ void vnodeCloseCachePool(int vnode) {
   pVnode->pCachePool = NULL;
 }
 
+/*
+ * 为测量对象动态分配cache内存
+ * 返回指针指向动态分配的内存空间首地址
+ */
 void *vnodeAllocateCacheInfo(SMeterObj *pObj) {
   SCacheInfo *pInfo;
   size_t      size;

@@ -30,6 +30,9 @@ typedef struct {
   char *             offset[];
 } SCacheBlock;
 
+/*
+ * vnode的测量对象的Cache信息
+ */
 typedef struct {
   int64_t       blocks;
   int           maxBlocks;

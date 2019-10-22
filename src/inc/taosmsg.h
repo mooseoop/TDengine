@@ -89,7 +89,7 @@ extern "C" {
 #define TSDB_CODE_MAX_CONNECTIONS            66    // too many connections
 #define TSDB_CODE_SESSION_ALREADY_EXIST      67
 #define TSDB_CODE_NO_QSUMMARY                68
-#define TSDB_CODE_SERV_OUT_OF_MEMORY         69
+#define TSDB_CODE_SERV_OUT_OF_MEMORY         69    //server 内存不足
 #define TSDB_CODE_INVALID_QHANDLE            70
 #define TSDB_CODE_RELATED_TABLES_EXIST       71
 #define TSDB_CODE_MONITOR_DB_FORBEIDDEN      72

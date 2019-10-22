@@ -68,8 +68,11 @@ enum _sync_cmd {
   TSDB_SYNC_CMD_REMOVE,
 };
 
+/*
+ * 测量对象任务状态
+ */
 enum _meter_state {
-  TSDB_METER_STATE_READY       = 0x00,
+  TSDB_METER_STATE_READY       = 0x00,      //测量任务状态ready
   TSDB_METER_STATE_INSERT      = 0x01,
   TSDB_METER_STATE_IMPORTING   = 0x02,
   TSDB_METER_STATE_UPDATING    = 0x04,
@@ -170,20 +173,20 @@ typedef struct {
  * 列对象
  */
 typedef struct SColumn {
-  short colId;
-  short bytes;
-  char  type;
+  short colId;    //列id
+  short bytes;    //列字节长度
+  char  type;     //列类型
 } SColumn;
 
 /*
- * 测量对象
+ * 测量任务对象，比如一次sql查询
  */
 typedef struct _meter_obj {
   uint64_t uid;
   char     meterId[TSDB_METER_ID_LEN];    //字符数组meterID，长度为TSDB_METER_ID_LEN
   int      sid;           //session ID
   short    vnode;         //测量对象对应的vnode
-  short    numOfColumns;
+  short    numOfColumns;  //测量任务的列头的数目
   short    bytesPerPoint;
   short    maxBytes;
   int32_t  pointsPerBlock;
@@ -194,18 +197,18 @@ typedef struct _meter_obj {
   TSKEY    timeStamp;      // delete or added time
   uint64_t commitCount;
   int32_t  sversion;
-  short    sqlLen;
+  short    sqlLen;         //测量任务对象的sql长度
   char     searchAlgorithm : 4;
   char     compAlgorithm : 4;
   char     status;  // 0: ok, 1: stop stream computing
 
   char     reserved[16];
-  int      state;
-  int      numOfQueries;
-  char *   pSql;
+  int      state;            //测量任务对象状态
+  int      numOfQueries;    //查询任务数
+  char *   pSql;            //指针指向测量任务对象的sql
   void *   pStream;
-  void *   pCache;
-  SColumn *schema;
+  void *   pCache;          //指针指向测量对象的Cache内存
+  SColumn *schema;          //指针指向查询对象的列头信息
 } SMeterObj;
 
 typedef struct {

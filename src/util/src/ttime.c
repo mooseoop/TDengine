@@ -30,12 +30,18 @@ static int32_t parseLocaltime(char* timestr, int64_t* time, int32_t timePrec);
 
 int32_t taosGetTimestampSec() { return (int32_t)time(NULL); }
 
+/*
+ * 获得时间戳，单位毫秒
+ */
 int64_t taosGetTimestampMs() {
   struct timeval systemTime;
   gettimeofday(&systemTime, NULL);
   return (int64_t)systemTime.tv_sec * 1000L + (uint64_t)systemTime.tv_usec / 1000;
 }
 
+/*
+ * 获得时间戳，单位微妙
+ */
 int64_t taosGetTimestampUs() {
   struct timeval systemTime;
   gettimeofday(&systemTime, NULL);

@@ -38,8 +38,8 @@ extern "C" {
 
 #define TS_PATH_DELIMITER "."
 
-#define TSDB_TIME_PRECISION_MILLI 0
-#define TSDB_TIME_PRECISION_MICRO 1
+#define TSDB_TIME_PRECISION_MILLI 0   //时间精度是毫秒
+#define TSDB_TIME_PRECISION_MICRO 1   //时间精度是微妙
 
 #define TSDB_TIME_PRECISION_MILLI_STR "ms"
 #define TSDB_TIME_PRECISION_MICRO_STR "us"
@@ -148,7 +148,7 @@ enum _syncstatus {
 
 #define TSDB_DEFAULT_PKT_SIZE     65480  // same as RPC_MAX_UDP_SIZE
 
-#define TSDB_PAYLOAD_SIZE (TSDB_DEFAULT_PKT_SIZE - 100)
+#define TSDB_PAYLOAD_SIZE (TSDB_DEFAULT_PKT_SIZE - 100)   //rpc消息有效载荷大小
 #define TSDB_DEFAULT_PAYLOAD_SIZE 1024  // default payload size
 #define TSDB_EXTRA_PAYLOAD_SIZE   128   // extra bytes for auth
 #define TSDB_SQLCMD_SIZE          1024

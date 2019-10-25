@@ -847,6 +847,9 @@ int vnodeImportWholeToCache(SImportInfo *pImport, char *payload, int rows) {
   return code;
 }
 
+/*
+ * vnode节点测量任务处理，导入任务
+ */
 int vnodeImportPoints(SMeterObj *pObj, char *cont, int contLen, char source, void *param, int sversion,
                       int *pNumOfPoints, TSKEY now) {
   SSubmitMsg *pSubmit = (SSubmitMsg *)cont;

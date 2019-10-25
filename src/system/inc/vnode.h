@@ -47,18 +47,21 @@ extern "C" {
 #define TSDB_CACHE_POS_BITS           13
 #define TSDB_CACHE_POS_MASK           0x1FFF
 
-#define TSDB_ACTION_INSERT 0
-#define TSDB_ACTION_IMPORT 1
-#define TSDB_ACTION_DELETE 2
-#define TSDB_ACTION_UPDATE 3
-#define TSDB_ACTION_MAX    4
+#define TSDB_ACTION_INSERT 0      //action = Insert
+#define TSDB_ACTION_IMPORT 1      //action = Import
+#define TSDB_ACTION_DELETE 2      //action = Delete
+#define TSDB_ACTION_UPDATE 3      //action = Update
+#define TSDB_ACTION_MAX    4      //action最大值
 
+/*
+ * TD数据来源枚举
+ */
 enum _data_source {
   TSDB_DATA_SOURCE_METER,
   TSDB_DATA_SOURCE_VNODE,
   TSDB_DATA_SOURCE_SHELL,
   TSDB_DATA_SOURCE_QUEUE,
-  TSDB_DATA_SOURCE_LOG,
+  TSDB_DATA_SOURCE_LOG,         //来源与commit日志
 };
 
 enum _sync_cmd {
@@ -73,11 +76,11 @@ enum _sync_cmd {
  */
 enum _meter_state {
   TSDB_METER_STATE_READY       = 0x00,      //测量任务状态ready
-  TSDB_METER_STATE_INSERT      = 0x01,
-  TSDB_METER_STATE_IMPORTING   = 0x02,
-  TSDB_METER_STATE_UPDATING    = 0x04,
-  TSDB_METER_STATE_DELETING    = 0x10,
-  TSDB_METER_STATE_DELETED     = 0x18,
+  TSDB_METER_STATE_INSERT      = 0x01,      //插入
+  TSDB_METER_STATE_IMPORTING   = 0x02,      //导入中
+  TSDB_METER_STATE_UPDATING    = 0x04,      //更新中
+  TSDB_METER_STATE_DELETING    = 0x10,      //删除中
+  TSDB_METER_STATE_DELETED     = 0x18,      //已删除
 };
 
 /*
@@ -108,16 +111,16 @@ typedef struct {
   char                syncStatus;
   char                commitInProcess;
   pthread_t           commitThread;
-  TSKEY               firstKey;  // minimum key uncommitted, it may be smaller than
+  TSKEY               firstKey;  // minimum key uncommitted, it may be smaller than，first时间戳
   // commitFirstKey
   TSKEY commitFirstKey;  // minimum key for a commit file, it shall be
   // xxxx00000, calculated from fileId
   TSKEY commitLastKey;  // maximum key for a commit file, it shall be xxxx99999,
   // calculated fromm fileId
   int   commitFileId;
-  TSKEY lastCreate;     //最后建立
-  TSKEY lastRemove;     //最后删除
-  TSKEY lastKey;  // last key for the whole vnode, updated by every insert
+  TSKEY lastCreate;     //最后建立时间戳
+  TSKEY lastRemove;     //最后删除时间戳
+  TSKEY lastKey;  // 最后时间戳，last key for the whole vnode, updated by every insert
   // operation
   uint64_t version;     //版本
 
@@ -126,12 +129,12 @@ typedef struct {
   void *streamTimer;
 
   TSKEY           lastKeyOnFile;  // maximum key on the last file, is shall be xxxx99999
-  int             fileId;   //字段id
+  int             fileId;   //数据文件序号
   int             badFileId;
-  int             numOfFiles;   //文件数
-  int             maxFiles;
-  int             maxFile1;
-  int             maxFile2;
+  int             numOfFiles;   //vnode的数据文件个数，和fileId对应，fileId表示文件序号
+  int             maxFiles;     //最大文件数
+  int             maxFile1;     //最大文件数1
+  int             maxFile2;     //最大文件数2
   int             nfd;  // temp head file FD
   int             hfd;  // head file FD
   int             lfd;  // last file FD
@@ -139,7 +142,7 @@ typedef struct {
   int             dfd;  // data file FD
   int64_t         dfSize;
   int64_t         lfSize;
-  uint64_t *      fmagic;  // hold magic number for each file
+  uint64_t *      fmagic;  // hold magic number for each file，指针变量，指向每个文件的幻数，等于fileId的data文件和last文件的大小和。
   char            cfn[TSDB_FILENAME_LEN];
   char            nfn[TSDB_FILENAME_LEN];
   char            lfn[TSDB_FILENAME_LEN];  // last file name
@@ -149,15 +152,15 @@ typedef struct {
   int             logFd;
   char *          pMem;
   char *          pWrite;
-  pthread_mutex_t logMutex;
-  char            logFn[TSDB_FILENAME_LEN];
-  char            logOFn[TSDB_FILENAME_LEN];
-  int64_t         mappingSize;
-  int64_t         mappingThreshold;
+  pthread_mutex_t logMutex;               //vnode的线程互斥锁
+  char            logFn[TSDB_FILENAME_LEN];   //submit日志文件，/var/lib/taos/vnode1/db/submit1.log
+  char            logOFn[TSDB_FILENAME_LEN];  //submit old日志文件，/var/lib/taos/vnode1/db/submit1.olog，未提交的数据
+  int64_t         mappingSize;            //vnode节点缓存总大小
+  int64_t         mappingThreshold;       //vnode节点缓存门槛大小 = 缓存总大小 * 0.7
 
   void *         commitTimer;
-  void **        meterList;               //测量对象列表
-  void *         pCachePool;
+  void **        meterList;               //指针指向vnode测量对象列表
+  void *         pCachePool;              //指针指向vnode缓存池
   void *         pQueue;
   pthread_t      thread;
   int            peersOnline;
@@ -182,12 +185,12 @@ typedef struct SColumn {
  * 测量任务对象，比如一次sql查询
  */
 typedef struct _meter_obj {
-  uint64_t uid;
-  char     meterId[TSDB_METER_ID_LEN];    //字符数组meterID，长度为TSDB_METER_ID_LEN
+  uint64_t uid;           //user id
+  char     meterId[TSDB_METER_ID_LEN];    //测量任务ID，字符数组meterID，长度为TSDB_METER_ID_LEN
   int      sid;           //session ID
   short    vnode;         //测量对象对应的vnode
   short    numOfColumns;  //测量任务的列头的数目
-  short    bytesPerPoint;
+  short    bytesPerPoint; //
   short    maxBytes;
   int32_t  pointsPerBlock;
   int32_t  pointsPerFileBlock;

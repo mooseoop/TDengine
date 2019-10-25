@@ -41,18 +41,18 @@ int vnodeInitStoreVnode(int vnode) {
   SVnodeObj *pVnode = vnodeList + vnode;    //获取列表中的指定vnode节点指针
 
   pVnode->vnode = vnode;
-  vnodeOpenMetersVnode(vnode);
+  vnodeOpenMetersVnode(vnode);    //创建vnode节点测量对象文件，并从文件中加载测量对象到vnode的测量对象列表
   if (pVnode->cfg.maxSessions == 0) return 0;
 
-  pVnode->firstKey = taosGetTimestamp(pVnode->cfg.precision);
+  pVnode->firstKey = taosGetTimestamp(pVnode->cfg.precision); //记录vnode节点first时间戳
 
-  pVnode->pCachePool = vnodeOpenCachePool(vnode);
+  pVnode->pCachePool = vnodeOpenCachePool(vnode);   //创建vnode节点缓存池
   if (pVnode->pCachePool == NULL) {
     dError("vid:%d, cache pool init failed.", pVnode->vnode);
     return -1;
   }
 
-  if (vnodeInitFile(vnode) < 0) return -1;
+  if (vnodeInitFile(vnode) < 0) return -1;    //初始化vnode节点数据文件，检查文件合法
 
   if (vnodeInitCommit(vnode) < 0) {
     dError("vid:%d, commit init failed.", pVnode->vnode);

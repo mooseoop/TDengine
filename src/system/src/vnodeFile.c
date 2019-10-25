@@ -66,6 +66,14 @@ int vnodeRecoverDataFile(int vnode, int fileId);
 int vnodeForwardStartPosition(SQuery *pQuery, SCompBlock *pBlock, int32_t slotIdx, SVnodeObj *pVnode, SMeterObj *pObj);
 int vnodeCheckNewHeaderFile(int fd, SVnodeObj *pVnode);
 
+/*
+ * 获取vnode节点的数据头文件/数据文件/最新数据文件的长文件名
+ * *headName：数据头文件名，etc：/var/lib/taos/vnode1/db/v1f2.head
+ * *dataName：数据文件名，  etc:/var/lib/taos/vnode1/db/v1f2.data
+ * *lastName：last文件名，  etc:/var/lib/taos/vnode1/db/v1f2.last
+ * vnode：vnode节点id
+ * fileId：文件id
+ */
 void vnodeGetHeadDataLname(char *headName, char *dataName, char *lastName, int vnode, int fileId) {
   if (headName != NULL) sprintf(headName, "%s/vnode%d/db/v%df%d.head", tsDirectory, vnode, vnode, fileId);
   if (dataName != NULL) sprintf(dataName, "%s/vnode%d/db/v%df%d.data", tsDirectory, vnode, vnode, fileId);
@@ -1728,6 +1736,11 @@ _next:
   return code;
 }
 
+/*
+ * vnode节点更新节点数据文件的大小，检查文件状态是否正常
+ * vnode：vnode节点id
+ * fileId：vnode的file id
+ */
 int vnodeUpdateFileMagic(int vnode, int fileId) {
   struct stat fstat;
   char        fileName[256];
@@ -1735,51 +1748,55 @@ int vnodeUpdateFileMagic(int vnode, int fileId) {
   SVnodeObj *pVnode = vnodeList + vnode;
   uint64_t   magic = 0;
 
-  vnodeGetHeadDataLname(fileName, NULL, NULL, vnode, fileId);
-  if (stat(fileName, &fstat) != 0) {
+  vnodeGetHeadDataLname(fileName, NULL, NULL, vnode, fileId); //获取vnode节点的headName文件名
+  if (stat(fileName, &fstat) != 0) {  //获取fileNmae的文件状态
     dError("vid:%d, head file:%s is not there", vnode, fileName);
     return -1;
   }
 
   int size = sizeof(SCompHeader) * pVnode->cfg.maxSessions + sizeof(TSCKSUM) + TSDB_FILE_HEADER_LEN;
-  if (fstat.st_size < size) {
+  if (fstat.st_size < size) {   //文件的大小若小于计算应该的大小，文件是坏的
     dError("vid:%d, head file:%s is corrupted", vnode, fileName);
     return -1;
   }
 
-  if (fstat.st_size == size) return 0;
+  if (fstat.st_size == size) return 0;    //文件大小和计算的大小相等，返回成功
 
-  vnodeGetHeadDataLname(NULL, fileName, NULL, vnode, fileId);
-  if (stat(fileName, &fstat) == 0) {
-    magic = fstat.st_size;
+  vnodeGetHeadDataLname(NULL, fileName, NULL, vnode, fileId);   //获取vnode节点的dataName文件名
+  if (stat(fileName, &fstat) == 0) {  //获取dataName文件状态
+    magic = fstat.st_size;    //文件的大小字节
   } else {
     dError("vid:%d, data file:%s is not there", vnode, fileName);
     return -1;
   }
 
-  vnodeGetHeadDataLname(NULL, NULL, fileName, vnode, fileId);
+  vnodeGetHeadDataLname(NULL, NULL, fileName, vnode, fileId);   //获取vnode节点的lastName文件名
   if (stat(fileName, &fstat) == 0) {
     magic += fstat.st_size;
   }
 
   int slot = fileId % pVnode->maxFiles;
-  pVnode->fmagic[slot] = magic;
+  pVnode->fmagic[slot] = magic;   //vnode的fmagic = vnode的dataName文件大小 + vnode的lastName文件大小
 
   return 0;
 }
 
+/*
+ * 初始化vnode的数据文件
+ * vnode：vnode节点id
+ */
 int vnodeInitFile(int vnode) {
   int        code = 0;
-  SVnodeObj *pVnode = vnodeList + vnode;
+  SVnodeObj *pVnode = vnodeList + vnode;  //指针指向vnodelist列表中的当前指定的vnode节点
 
   pVnode->maxFiles = pVnode->cfg.daysToKeep / pVnode->cfg.daysPerFile + 1;
   pVnode->maxFile1 = pVnode->cfg.daysToKeep1 / pVnode->cfg.daysPerFile;
   pVnode->maxFile2 = pVnode->cfg.daysToKeep2 / pVnode->cfg.daysPerFile;
-  pVnode->fmagic = (uint64_t *)calloc(pVnode->maxFiles + 1, sizeof(uint64_t));
-  int fileId = pVnode->fileId;
+  pVnode->fmagic = (uint64_t *)calloc(pVnode->maxFiles + 1, sizeof(uint64_t));  //在内存的动态存储区分配最大文件数+1个，长度sizeof（）的连续空间
+  int fileId = pVnode->fileId;  //vnode的file id
 
   for (int i = 0; i < pVnode->numOfFiles; ++i) {
-    if (vnodeUpdateFileMagic(vnode, fileId) < 0) {
+    if (vnodeUpdateFileMagic(vnode, fileId) < 0) {    //更新计算vnode节点的fileId数据文件的大小，检查文件有效性
       if (pVnode->cfg.replications > 1) {
         pVnode->badFileId = fileId;
       }
@@ -1788,7 +1805,7 @@ int vnodeInitFile(int vnode) {
       dTrace("vid:%d fileId:%d is checked", vnode, fileId);
     }
 
-    fileId--;
+    fileId--;     //循环递减检查
   }
 
   return code;

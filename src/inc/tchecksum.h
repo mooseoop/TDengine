@@ -32,7 +32,7 @@ extern "C" {
 #include "tcrc32c.h"
 #include "tutil.h"
 
-typedef uint32_t TSCKSUM;
+typedef uint32_t TSCKSUM;   //校验和
 
 static FORCE_INLINE TSCKSUM taosCalcChecksum(TSCKSUM csi, const uint8_t *stream, uint32_t ssize) {
   assert(ssize >= 0 && stream != NULL);
@@ -53,6 +53,9 @@ static FORCE_INLINE int taosCheckChecksum(const uint8_t *stream, uint32_t ssize,
   return (checksum == (*crc32c)(0, stream, (size_t)ssize));
 }
 
+/*
+ * 检查校验和
+ */
 static FORCE_INLINE int taosCheckChecksumWhole(const uint8_t *stream, uint32_t ssize) {
   if (ssize < sizeof(TSCKSUM)) return 0;
   return *((TSCKSUM *)(stream + ssize - sizeof(TSCKSUM))) == (*crc32c)(0, stream, (size_t)(ssize - sizeof(TSCKSUM)));

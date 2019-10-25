@@ -25,6 +25,11 @@
 void vnodeSearchPointInCache(SMeterObj *pObj, SQuery *pQuery);
 void vnodeProcessCommitTimer(void *param, void *tmrId);
 
+/*
+ * 创建vnode节点缓存池
+ * vnode：vnode节点id
+ * 返回值：指针指向缓存池地址
+ */
 void *vnodeOpenCachePool(int vnode) {
   SCachePool *pCachePool;
   SVnodeCfg * pCfg = &vnodeList[vnode].cfg;

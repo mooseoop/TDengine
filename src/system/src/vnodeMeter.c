@@ -35,6 +35,11 @@ int  tsMeterSizeOnFile;     //文件中测量占用的字节大小
 void vnodeUpdateMeter(void *param, void *tmdId);
 void vnodeRecoverMeterObjectFile(int vnode);
 
+/*
+ * vnode节点测量任务处理
+ * int (*vnodeProcessAction[])：指向函数的指针数组，函数返回值是int类型；数组的两个函数分别是vnodeInsertPoints，vnodeImportPoints
+ * (SMeterObj *, char *, int, char, void *, int, int *, TSKEY)：是函数的参数类型 * 
+ */
 int (*vnodeProcessAction[])(SMeterObj *, char *, int, char, void *, int, int *, TSKEY) = {vnodeInsertPoints,
                                                                                    vnodeImportPoints};
 
@@ -290,11 +295,15 @@ int vnodeSaveVnodeInfo(int vnode) {
   return 0;
 }
 
+/*
+ * 把从文件中读取的测量对象加载到vnode的测量对象列表中
+ * *buffer：从测量文件中读取的测量任务信息
+ */
 int vnodeRestoreMeterObj(char *buffer, int64_t length) {
   SMeterObj *pSavedObj, *pObj;
   int        size;
 
-  pSavedObj = (SMeterObj *)buffer;  //vnode测量对象
+  pSavedObj = (SMeterObj *)buffer;  //指针指向测量对象地址
   if (pSavedObj->vnode < 0 || pSavedObj->vnode >= TSDB_MAX_VNODES) {
     dTrace("vid:%d is out of range, corrupted meter obj file", pSavedObj->vnode);
     return -1;
@@ -316,7 +325,7 @@ int vnodeRestoreMeterObj(char *buffer, int64_t length) {
   }
 
   memcpy(pObj, pSavedObj, offsetof(SMeterObj, reserved));   //从pSaveOb拷贝 offsetof（）个字节数据 到pObj
-  vnodeList[pSavedObj->vnode].meterList[pSavedObj->sid] = pObj;
+  vnodeList[pSavedObj->vnode].meterList[pSavedObj->sid] = pObj; //把当前的测量任务增加到vnode的测量对象列表指针中
   pObj->numOfQueries = 0;     //查询任务数
   pObj->pCache = vnodeAllocateCacheInfo(pObj);  //指针指向为查询对象分配的cache内存地址
   pObj->pStream = NULL;
@@ -330,8 +339,8 @@ int vnodeRestoreMeterObj(char *buffer, int64_t length) {
            pSavedObj->sqlLen);    //拷贝长度是pSaveObj的sql长度
   pObj->pSql = (char *)pObj + sizeof(SMeterObj);    //*pSql指向 MeterObj对象后面的Sql内存地址
 
-  pObj->lastKey = pObj->lastKeyOnFile;
-  if (pObj->lastKey > vnodeList[pObj->vnode].lastKey) vnodeList[pObj->vnode].lastKey = pObj->lastKey;
+  pObj->lastKey = pObj->lastKeyOnFile;      //唯一的key
+  if (pObj->lastKey > vnodeList[pObj->vnode].lastKey) vnodeList[pObj->vnode].lastKey = pObj->lastKey;   //更新vnodelist上vnode的lastkey
 
   //  taosSetSecurityInfo(pObj->vnode, pObj->sid, pObj->meterId, pObj->spi, pObj->encrypt, pObj->secret, pObj->cipheringKey);
 
@@ -339,6 +348,11 @@ int vnodeRestoreMeterObj(char *buffer, int64_t length) {
   return TSDB_CODE_SUCCESS;
 }
 
+/*
+ * 创建vnode的测量对象文件
+ * 从测量对象文件加载vnode的测量对象列表
+ * vnode：指定的vnode节点id
+ */
 int vnodeOpenMetersVnode(int vnode) {
   FILE *     fp;
   char *     buffer;
@@ -346,7 +360,7 @@ int vnodeOpenMetersVnode(int vnode) {
   int64_t    offset, length;
   SVnodeObj *pVnode = &vnodeList[vnode];  //*pVnode指向vnodeList的vnode节点
 
-  fp = vnodeOpenMeterObjFile(vnode);  //创建vnode的MeterObj文件
+  fp = vnodeOpenMeterObjFile(vnode);  //创建vnode节点的MeterObj测量对象文件
   if (fp == NULL) return 0;
 
   //设置文件指针fp的位置，从SEEK_SET偏移VERSION_SIZE个字节位置
@@ -379,7 +393,7 @@ int vnodeOpenMetersVnode(int vnode) {
   //设置文件指针fp的位置，从SEEK_SET偏移HEADER长度（512）
   fseek(fp, TSDB_FILE_HEADER_LEN, SEEK_SET);
 
-  //文件中测量占用的字节大小
+  //测量对象文件占用的字节大小
   tsMeterSizeOnFile = sizeof(SMeterObj) + TSDB_MAX_COLUMNS * sizeof(SColumn) + TSDB_MAX_SAVED_SQL_LEN + sizeof(TSCKSUM);
 
   int size = sizeof(SMeterObj *) * pVnode->cfg.maxSessions;
@@ -412,10 +426,10 @@ int vnodeOpenMetersVnode(int vnode) {
 
     fseek(fp, offset, SEEK_SET);
     if (fread(buffer, length, 1, fp) <= 0) break;   //按照offset和length从文件读取测量对象
-    if (taosCheckChecksumWhole((uint8_t *)buffer, length)) {
-      vnodeRestoreMeterObj(buffer, length - sizeof(TSCKSUM));
+    if (taosCheckChecksumWhole((uint8_t *)buffer, length)) {  //检查校验和
+      vnodeRestoreMeterObj(buffer, length - sizeof(TSCKSUM));   //把从文件中读取的测量任务加载到vnode的测量对象列表中
     } else {
-      dError("meter object file is broken since checksum mismatch, vnode: %d sid: %d, try to recover", vnode, sid);
+      dError("meter object file is broken since checksum mismatch, vnode: %d sid: %d, try to recover", vnode, sid); //由于校验和不匹配，测量对象文件已损坏
       continue;
       /* vnodeRecoverMeterObjectFile(vnode); */
     }
@@ -524,19 +538,31 @@ int vnodeRemoveMeterObj(int vnode, int sid) {
   return 0;
 }
 
+/*
+ * vnode测量任务处理，插入任务
+ * *pObj：指针变量，指向测量任务对象
+ * *cont：指针变量，指向commit任务消息内容
+ * contLen：commit任务内容的长度
+ * source：TD的数据来源，比如来源于commit日志文件
+ * *param：指针变量，指向
+ * sversion：commit数据version
+ * *numOfInsertPoints：指针变量，
+ * TSKEY：时间戳
+ * 返回：int类型
+ */
 int vnodeInsertPoints(SMeterObj *pObj, char *cont, int contLen, char source, void *param, int sversion,
                       int *numOfInsertPoints, TSKEY now) {
   int         expectedLen, i;
   short       numOfPoints;
-  SSubmitMsg *pSubmit = (SSubmitMsg *)cont;
+  SSubmitMsg *pSubmit = (SSubmitMsg *)cont;   //commit任务内容
   char *      pData;
   TSKEY       tsKey;
   int         cfile;
   int         points = 0;
   int         code = TSDB_CODE_SUCCESS;
-  SVnodeObj * pVnode = vnodeList + pObj->vnode;
+  SVnodeObj * pVnode = vnodeList + pObj->vnode;   //指向vnode节点对象
 
-  numOfPoints = htons(pSubmit->numOfRows);
+  numOfPoints = htons(pSubmit->numOfRows);  //htons函数将一个无符号短整型数值转换为网络字节序，即大端模式(big-endian)
   expectedLen = numOfPoints * pObj->bytesPerPoint + sizeof(pSubmit->numOfRows);
   if (expectedLen != contLen) {
     dError("vid:%d sid:%d id:%s, invalid submit msg length:%d, expected:%d, bytesPerPoint: %d",
@@ -545,8 +571,8 @@ int vnodeInsertPoints(SMeterObj *pObj, char *cont, int contLen, char source, voi
     goto _over;
   }
 
-  // to guarantee time stamp is the same for all vnodes
-  pData = pSubmit->payLoad;
+  // to guarantee time stamp is the same for all vnodes，确保所有vnode的时间戳相同  
+  pData = pSubmit->payLoad; //commit消息的有效载荷
   tsKey = now;
   cfile = tsKey/pVnode->cfg.daysPerFile/tsMsPerDay[pVnode->cfg.precision];
   if (*((TSKEY *)pData) == 0) {

@@ -600,6 +600,11 @@ void vnodeClearMeterState(SMeterObj* pMeterObj, int32_t state) {
   pMeterObj->state &= (~state);
 }
 
+/*
+ * vnode节点测量任务状态检查
+ * *pMeterObj：测量任务对象
+ * state：要校验的状态
+ */
 bool vnodeIsMeterState(SMeterObj* pMeterObj, int32_t state) {
   if (state == TSDB_METER_STATE_READY) {
     return pMeterObj->state == TSDB_METER_STATE_READY;

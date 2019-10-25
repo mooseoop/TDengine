@@ -28,12 +28,15 @@
 #include "vnode.h"
 #include "vnodeUtil.h"
 
+/*
+ * commit头信息
+ */
 typedef struct {
-  int  sversion;
-  int  sid;
-  int  contLen;
-  int  action:8;
-  int  simpleCheck:24;
+  int  sversion;  //version信息
+  int  sid;       //session id信息
+  int  contLen;   //commit内容长度
+  int  action:8;  //commit的操作信息，占8个位域，1个字节
+  int  simpleCheck:24;  //简单校验信息（head信息的求和然后和0xFF相与），占24个位域，3个字节
 } SCommitHead;
 
 int vnodeOpenCommitLog(int vnode, uint64_t firstV) {
@@ -104,41 +107,47 @@ int vnodeRenewCommitLog(int vnode) {
 
 void vnodeRemoveCommitLog(int vnode) { remove(vnodeList[vnode].logOFn); }
 
+/*
+ * 从submit olog文件中恢复vnode的commit数据
+ * vnode：vnode 节点id
+ * *fileNmae：指针变量，指向submit log文件
+ * *firstV：
+ */
 size_t vnodeRestoreDataFromLog(int vnode, char *fileName, uint64_t *firstV) {
   int    fd, ret;
   char * cont = NULL;
   size_t totalLen = 0;
   int    actions = 0;
 
-  SVnodeObj *pVnode = vnodeList + vnode;
+  SVnodeObj *pVnode = vnodeList + vnode;    //指针变量*pVnode，指向vnodelist列表对象的指定vnode节点
   if (pVnode->meterList == NULL) {
     dError("vid:%d, vnode is not initialized!!!", vnode);
     return 0;
   }
 
   struct stat fstat;
-  if (stat(fileName, &fstat) < 0) {
+  if (stat(fileName, &fstat) < 0) {   //获取fileNmae的文件状态到&fstat，是否失败
     dTrace("vid:%d, no log file:%s", vnode, fileName);
     return 0;
   }
 
   dTrace("vid:%d, uncommitted data in file:%s, restore them ...", vnode, fileName);
 
-  fd = open(fileName, O_RDWR);
+  fd = open(fileName, O_RDWR);    //打开submit olog为提交的数据文件，以读写方式打开
   if (fd < 0) {
     dError("vid:%d, failed to open:%s, reason:%s", vnode, fileName, strerror(errno));
     goto _error;
   }
 
-  ret = read(fd, firstV, sizeof(pVnode->version));
+  ret = read(fd, firstV, sizeof(pVnode->version));    //从submit olog文件中读取vnode的version信息
   if (ret <= 0) {
     dError("vid:%d, failed to read version", vnode);
     goto _error;
   }
-  pVnode->version = *firstV;
+  pVnode->version = *firstV;    //把从文件中读取的值设置为version。
 
-  int32_t bufLen = TSDB_PAYLOAD_SIZE;
-  cont = calloc(1, bufLen);
+  int32_t bufLen = TSDB_PAYLOAD_SIZE;   
+  cont = calloc(1, bufLen);     //分配并初始化为0内存，1个长度bufLen
   if (cont == NULL) {
     dError("vid:%d, out of memory", vnode);
     goto _error;
@@ -148,14 +157,17 @@ size_t vnodeRestoreDataFromLog(int vnode, char *fileName, uint64_t *firstV) {
   SCommitHead head;
   int simpleCheck = 0;
   while (1) {
-    ret = read(fd, &head, sizeof(head));
+    ret = read(fd, &head, sizeof(head));  //从submit olog文件中读取commit head信息
     if (ret < 0) goto _error;
-    if (ret == 0) break;
-    if (((head.sversion+head.sid+head.contLen+head.action) & 0xFFFFFF) != head.simpleCheck) break;
+    if (ret == 0) break;    //没有读到内容，退出读文件循环
+    
+    //读取的commit head信息求和，然后和0xFF相与，不相等则退出，判断文件信息是否被非法修改
+    if (((head.sversion+head.sid+head.contLen+head.action) & 0xFFFFFF) != head.simpleCheck) break;    
     simpleCheck = head.simpleCheck;
 
     // head.contLen validation is removed
     if (head.sid >= pVnode->cfg.maxSessions || head.sid < 0 || head.action >= TSDB_ACTION_MAX) {
+      //文件读取的session id大于最大会话，或者sid<0，或者文件读取的action >= Action最大值，非法值
       dError("vid, invalid commit head, sid:%d contLen:%d action:%d", head.sid, head.contLen, head.action);
     } else {
       if (head.contLen > 0) {
@@ -164,16 +176,16 @@ size_t vnodeRestoreDataFromLog(int vnode, char *fileName, uint64_t *firstV) {
           bufLen = head.contLen+sizeof(simpleCheck);
         }
 
-        if (read(fd, cont, head.contLen+sizeof(simpleCheck)) < 0) goto _error;
+        if (read(fd, cont, head.contLen+sizeof(simpleCheck)) < 0) goto _error;    //继续读取submit olog文件，长度为commit内容长度+简单校验长度
         if (*(int *)(cont+head.contLen) != simpleCheck) break;
-        SMeterObj *pObj = pVnode->meterList[head.sid];
+        SMeterObj *pObj = pVnode->meterList[head.sid];    //指针变量指向vnode节点测量对象列表的指定sid的测量对象
         if (pObj == NULL) {
-          dError("vid:%d, sid:%d not exists, ignore data in commit log, contLen:%d action:%d",
+          dError("vid:%d, sid:%d not exists, ignore data in commit log, contLen:%d action:%d",  //从commit log获取的sid无效，跳过
               vnode, head.sid, head.contLen, head.action);
           continue;
         }
 
-        if (vnodeIsMeterState(pObj, TSDB_METER_STATE_DELETING)) {
+        if (vnodeIsMeterState(pObj, TSDB_METER_STATE_DELETING)) { //测量任务对象的状态时deleting 或者 deleted
           dWarn("vid:%d sid:%d id:%s, meter is dropped, ignore data in commit log, contLen:%d action:%d",
                  vnode, head.sid, head.contLen, head.action);
           continue;
@@ -210,17 +222,20 @@ _error:
   return -1;
 }
 
+/*
+ * 初始化vnode节点Commit
+ */
 int vnodeInitCommit(int vnode) {
   size_t     size = 0;
   uint64_t   firstV = 0;
   SVnodeObj *pVnode = vnodeList + vnode;
 
-  pthread_mutex_init(&(pVnode->logMutex), NULL);
+  pthread_mutex_init(&(pVnode->logMutex), NULL);    //vnode的线程互斥锁初始化
 
-  sprintf(pVnode->logFn, "%s/vnode%d/db/submit%d.log", tsDirectory, vnode, vnode);
-  sprintf(pVnode->logOFn, "%s/vnode%d/db/submit%d.olog", tsDirectory, vnode, vnode);
-  pVnode->mappingSize = ((int64_t)pVnode->cfg.cacheBlockSize) * pVnode->cfg.cacheNumOfBlocks.totalBlocks * 1.5;
-  pVnode->mappingThreshold = pVnode->mappingSize * 0.7;
+  sprintf(pVnode->logFn, "%s/vnode%d/db/submit%d.log", tsDirectory, vnode, vnode);  //submit日志文件，/var/lib/taos/vnode1/db/submit1.log
+  sprintf(pVnode->logOFn, "%s/vnode%d/db/submit%d.olog", tsDirectory, vnode, vnode);  //submit old日志文件，/var/lib/taos/vnode1/db/submit1.olog
+  pVnode->mappingSize = ((int64_t)pVnode->cfg.cacheBlockSize) * pVnode->cfg.cacheNumOfBlocks.totalBlocks * 1.5;   //vnode节点缓存总大小
+  pVnode->mappingThreshold = pVnode->mappingSize * 0.7;   //vnode节点缓存门槛大小，比如超过门槛值进行告警等
 
   // restore from .olog file and commit to file
   size = vnodeRestoreDataFromLog(vnode, pVnode->logOFn, &firstV);

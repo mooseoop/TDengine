@@ -22,7 +22,7 @@ extern "C" {
 
 #include "tsdb.h"
 
-#define TSDB_CODE_SUCCESS                    0
+#define TSDB_CODE_SUCCESS                    0    //TD的成功返回码
 #define TSDB_CODE_ACTION_IN_PROGRESS         1
 
 #define TSDB_CODE_LAST_SESSION_NOT_FINISHED  5
@@ -31,7 +31,7 @@ extern "C" {
 #define TSDB_CODE_INVALID_MSG_TYPE           8
 #define TSDB_CODE_ALREADY_PROCESSED          9
 #define TSDB_CODE_AUTH_FAILURE               10
-#define TSDB_CODE_WRONG_MSG_SIZE             11
+#define TSDB_CODE_WRONG_MSG_SIZE             11   //commit 消息大小异常
 #define TSDB_CODE_UNEXPECTED_RESPONSE        12
 #define TSDB_CODE_INVALID_RESPONSE_TYPE      13
 #define TSDB_CODE_NO_RESOURCE                14
@@ -353,9 +353,12 @@ typedef struct {
   uint32_t latitude;
 } SRegMsg;
 
+/*
+ * commit任务消息
+ */
 typedef struct {
-  short numOfRows;
-  char  payLoad[];
+  short numOfRows;    //commit的行数
+  char  payLoad[];    //commit消息有效载荷
 } SSubmitMsg;
 
 typedef struct {
@@ -686,13 +689,13 @@ typedef struct {
   int32_t  maxSessions;   //vnode的最大会话数
   int32_t  cacheBlockSize;  //缓存块字节大小
   union {
-    int32_t totalBlocks;
+    int32_t totalBlocks;    //总缓存块数
     float   fraction;
   } cacheNumOfBlocks;
   int32_t daysPerFile;  //每文件天数
 
-  int32_t daysToKeep1;
-  int32_t daysToKeep2;
+  int32_t daysToKeep1;  //保持天数1
+  int32_t daysToKeep2;  //保持条数2
   int32_t daysToKeep;   //保持天数
 
   int32_t commitTime;
@@ -704,7 +707,7 @@ typedef struct {
 
   char repStrategy;
   char loadLatest;  // load into mem or not
-  char precision;   // time resoluation
+  char precision;   // time resoluation，时间精度，1是微妙，0是毫秒
 
   char reserved[16];
 } SVnodeCfg, SCreateDbMsg, SDbCfg, SAlterDbMsg;

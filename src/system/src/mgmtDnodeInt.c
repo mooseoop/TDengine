@@ -44,6 +44,9 @@ int mgmtSendMsgToDnode(char *msg) {
   return 0;
 }
 
+/*
+ * 管理节点处理vnode节点发来的TSDB_MSG_TYPE_METER_CFG消息
+ */
 int mgmtProcessMeterCfgMsg(unsigned char *cont) {
   char *        pMsg, *pStart;
   STabObj *     pMeter = NULL;
@@ -58,7 +61,7 @@ int mgmtProcessMeterCfgMsg(unsigned char *cont) {
   if (pStart == NULL) return 0;
 
   *pStart = TSDB_MSG_TYPE_METER_CFG_RSP;
-  pMsg = pStart + 1;
+  pMsg = pStart + 1; //
 
   if (vnode < pObj->numOfVnodes) {
     int vgId = pObj->vload[vnode].vgId;
@@ -82,11 +85,14 @@ int mgmtProcessMeterCfgMsg(unsigned char *cont) {
     pMsg += sizeof(int32_t);
   }
 
-  mgmtSendMsgToDnode(pStart);
+  mgmtSendMsgToDnode(pStart); //管理节点给node节点发送相应消息
 
   return 0;
 }
 
+/*
+ * 处理TSDB_MSG_TYPE_VPEER_CFG消息
+ */
 int mgmtProcessVpeerCfgMsg(unsigned char *cont) {
   char *        pMsg, *pStart;
   SVpeerCfgMsg *pCfg = (SVpeerCfgMsg *)cont;
@@ -153,14 +159,18 @@ int mgmtProcessVPeersRsp(unsigned char *msg) {
   return 0;
 }
 
+/*
+* 管理节点处理从vnode发送来的消息，根据不同的消息完成不同的处理
+* *sched：指针变量，指向任务消息
+*/
 void mgmtProcessMsgFromVnode(SSchedMsg *sched) {
   char  msgType = *sched->msg;
-  char *content = sched->msg + 1;
+  char *content = sched->msg + 1; 
 
   mTrace("msg:%s is received from dnode", taosMsg[msgType]);
 
   if (msgType == TSDB_MSG_TYPE_METER_CFG) {
-    mgmtProcessMeterCfgMsg(content);
+    mgmtProcessMeterCfgMsg(content);  //处理TSDB_MSG_TYPE_METER_CFG消息
   } else if (msgType == TSDB_MSG_TYPE_VPEER_CFG) {
     mgmtProcessVpeerCfgMsg(content);
   } else if (msgType == TSDB_MSG_TYPE_CREATE_RSP) {
@@ -182,6 +192,12 @@ void mgmtProcessMsgFromVnode(SSchedMsg *sched) {
   free(sched->msg);
 }
 
+/*
+ * Dnode管理节点构建Create测量单元
+ * *pMeter：指针变量，指向表对象
+ * *pMsg：指针变量，消息体
+ * vnode:vnode节点id
+ */
 char *mgmtBuildCreateMeterIe(STabObj *pMeter, char *pMsg, int vnode) {
   SCreateMsg *pCreateMeter;
 

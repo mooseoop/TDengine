@@ -145,6 +145,11 @@ void *taosProcessSchedQueue(void *param) {
   }
 }
 
+/*
+* 把任务消息增加到任务队列中
+* *qhandle：指针变量，指向任务消息队列
+* *pMsg：指针变量，指向任务消息
+*/
 int taosScheduleTask(void *qhandle, SSchedMsg *pMsg) {
   SSchedQueue *pSched = (SSchedQueue *)qhandle;
   if (pSched == NULL) {

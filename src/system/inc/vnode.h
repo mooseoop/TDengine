@@ -61,7 +61,7 @@ enum _data_source {
   TSDB_DATA_SOURCE_VNODE,
   TSDB_DATA_SOURCE_SHELL,
   TSDB_DATA_SOURCE_QUEUE,
-  TSDB_DATA_SOURCE_LOG,         //来源与commit日志
+  TSDB_DATA_SOURCE_LOG,         //来源于commit日志
 };
 
 enum _sync_cmd {
@@ -149,7 +149,7 @@ typedef struct {
   char            tfn[TSDB_FILENAME_LEN];  // temp last file name
   pthread_mutex_t vmutex;
 
-  int             logFd;
+  int             logFd;                  //commit日志文件序列
   char *          pMem;
   char *          pWrite;
   pthread_mutex_t logMutex;               //vnode的线程互斥锁
@@ -159,9 +159,9 @@ typedef struct {
   int64_t         mappingThreshold;       //vnode节点缓存门槛大小 = 缓存总大小 * 0.7
 
   void *         commitTimer;
-  void **        meterList;               //指针指向vnode测量对象列表
-  void *         pCachePool;              //指针指向vnode缓存池
-  void *         pQueue;
+  void **        meterList;               //指针变量，指向vnode测量对象列表
+  void *         pCachePool;              //指针变量，指向vnode缓存池
+  void *         pQueue;                  //指针变量
   pthread_t      thread;
   int            peersOnline;
   int            shellConns;
@@ -190,16 +190,16 @@ typedef struct _meter_obj {
   int      sid;           //session ID
   short    vnode;         //测量对象对应的vnode
   short    numOfColumns;  //测量任务的列头的数目
-  short    bytesPerPoint; //
+  short    bytesPerPoint; //每行数据的字节数
   short    maxBytes;
-  int32_t  pointsPerBlock;
+  int32_t  pointsPerBlock;  //每块的数据行数
   int32_t  pointsPerFileBlock;
-  int      freePoints;
+  int      freePoints;      //空闲行数
   TSKEY    lastKey;        // updated by insert operation
   TSKEY    lastKeyOnFile;  // last key on file, updated by commit action
   TSKEY    timeStamp;      // delete or added time
   uint64_t commitCount;
-  int32_t  sversion;
+  int32_t  sversion;        //测量任务数据version
   short    sqlLen;         //测量任务对象的sql长度
   char     searchAlgorithm : 4;
   char     compAlgorithm : 4;

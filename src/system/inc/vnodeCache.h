@@ -44,13 +44,16 @@ typedef struct {
   SCacheBlock **cacheBlocks;  // cache block list, circular list
 } SCacheInfo;
 
+/*
+ * 缓存池结构
+ */
 typedef struct {
   int             vnode;
   char **         pMem;
   long            freeSlot;
-  pthread_mutex_t vmutex;
+  pthread_mutex_t vmutex;   //缓存池互斥锁
   uint64_t        count;  // kind of transcation ID
-  long            notFreeSlots;
+  long            notFreeSlots; //非空闲槽位数
   long            threshold;
   char            commitInProcess;
   int             cacheBlockSize;

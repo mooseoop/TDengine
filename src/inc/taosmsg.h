@@ -23,7 +23,7 @@ extern "C" {
 #include "tsdb.h"
 
 #define TSDB_CODE_SUCCESS                    0    //TD的成功返回码
-#define TSDB_CODE_ACTION_IN_PROGRESS         1
+#define TSDB_CODE_ACTION_IN_PROGRESS         1    //进行中
 
 #define TSDB_CODE_LAST_SESSION_NOT_FINISHED  5
 #define TSDB_CODE_INVALID_SESSION_ID         6
@@ -47,7 +47,7 @@ extern "C" {
 #define TSDB_CODE_INVALID_VALUE              24
 #define TSDB_CODE_REDIRECT                   25
 #define TSDB_CODE_ALREADY_THERE              26
-#define TSDB_CODE_INVALID_METER_ID           27
+#define TSDB_CODE_INVALID_METER_ID           27   //返回码，无效测量ID
 #define TSDB_CODE_INVALID_SQL                28
 #define TSDB_CODE_NETWORK_UNAVAIL            29
 #define TSDB_CODE_INVALID_MSG_LEN            30
@@ -124,12 +124,12 @@ extern "C" {
 #define TSDB_CODE_GRANT_DNODE_LIMITED        101
 #define TSDB_CODE_GRANT_CPU_LIMITED          102
 #define TSDB_CODE_SESSION_NOT_READY          103      // table NOT in ready state
-#define TSDB_CODE_BATCH_SIZE_TOO_BIG         104
+#define TSDB_CODE_BATCH_SIZE_TOO_BIG         104      // submit任务的数据太大，超过了vnode的数据块大小
 #define TSDB_CODE_TIMESTAMP_OUT_OF_RANGE     105
 #define TSDB_CODE_INVALID_QUERY_MSG          106      // failed to validate the sql expression msg by vnode
 #define TSDB_CODE_CACHE_BLOCK_TS_DISORDERED  107      // time stamp in cache block is disordered
 #define TSDB_CODE_FILE_BLOCK_TS_DISORDERED   108      // time stamp in file block is disordered
-#define TSDB_CODE_INVALID_COMMIT_LOG         109      // invalid commit log may be caused by insufficient sotrage
+#define TSDB_CODE_INVALID_COMMIT_LOG         109      // invalid commit log may be caused by insufficient sotrage，无效commit日志，可能是存储空间不足
 #define TSDB_CODE_SERVER_NO_SPACE            110
 
 // message type
@@ -389,6 +389,9 @@ typedef struct SMColumn {
   short bytes;
 } SMColumn;
 
+/*
+ * Create消息结构体
+ */
 typedef struct {
   short    vnode;
   int32_t  sid;
@@ -661,6 +664,9 @@ typedef struct {
   char    data[];
 } SRetrieveMeterRsp;
 
+/*
+ * 加载的vnode对象结构体
+ */
 typedef struct {
   uint32_t vnode;
   uint32_t vgId;
@@ -700,7 +706,7 @@ typedef struct {
 
   int32_t commitTime;
   int32_t rowsInFileBlock;
-  int16_t blocksPerMeter;
+  int16_t blocksPerMeter; //每个测量任务块大小
   char    compression;
   char    commitLog;
   char    replications;

@@ -325,15 +325,18 @@ pthread_t vnodeCreateCommitThread(SVnodeObj *pVnode) {
   return pVnode->commitThread;
 }
 
+/*
+* vnode节点处理commit任务
+*/
 void vnodeProcessCommitTimer(void *param, void *tmrId) {
   SVnodeObj * pVnode = (SVnodeObj *)param;
   SCachePool *pPool = (SCachePool *)pVnode->pCachePool;
 
-  pthread_mutex_lock(&pPool->vmutex);
+  pthread_mutex_lock(&pPool->vmutex);   //vnode的缓存池互斥锁加锁
 
-  vnodeCreateCommitThread(pVnode);
+  vnodeCreateCommitThread(pVnode);    //vnode节点创建commit线程
 
-  pthread_mutex_unlock(&pPool->vmutex);
+  pthread_mutex_unlock(&pPool->vmutex);  //互斥锁解锁
 }
 
 void vnodeCommitOver(SVnodeObj *pVnode) {

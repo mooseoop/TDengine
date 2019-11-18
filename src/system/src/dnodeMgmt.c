@@ -11,6 +11,8 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * dnode管理节点
  */
 
 #include <arpa/inet.h>
@@ -35,15 +37,19 @@ int vnodeProcessMeterCfgRsp(char *msg);
 int vnodeProcessAlterStreamRequest(char *pMsg);
 
 void mgmtProcessMsgFromVnode(SSchedMsg *sched);
-void *mgmtQhandle;
+void *mgmtQhandle;    //管理节点处理任务队列
 
+/*
+* vnode发送消息给管理节点
+* *msg：指针变量，指向要发送的消息
+*/
 int vnodeSendMsgToMgmt(char *msg) {
-  SSchedMsg schedMsg;
-  schedMsg.fp = mgmtProcessMsgFromVnode;
+  SSchedMsg schedMsg;   //任务消息
+  schedMsg.fp = mgmtProcessMsgFromVnode;  //函数指针，指向任务消息处理函数，管理节点处理来自vnode的消息任务
   schedMsg.msg = msg;
   schedMsg.ahandle = NULL;
   schedMsg.thandle = NULL;
-  taosScheduleTask(mgmtQhandle, &schedMsg);
+  taosScheduleTask(mgmtQhandle, &schedMsg);   //消息加入到任务队列中
 
   return 0;
 }
@@ -479,14 +485,19 @@ int vnodeSendVpeerCfgMsg(int vnode) {
   return 0;
 }
 
+/*
+* vnode发送测量任务消息
+* vnode:测量对象对应的vnode
+* sid：测量对象session id
+*/
 int vnodeSendMeterCfgMsg(int vnode, int sid) {
   SMeterCfgMsg *pCfg;
   char *        pStart, *pMsg;
 
-  pStart = (char *)malloc(256);
+  pStart = (char *)malloc(256);   //动态分配内存
   if (pStart == NULL) return 0;
 
-  *pStart = TSDB_MSG_TYPE_METER_CFG;
+  *pStart = TSDB_MSG_TYPE_METER_CFG;    //消息类型
   pMsg = pStart + 1;
 
   pCfg = (SMeterCfgMsg *)pMsg;
@@ -494,7 +505,7 @@ int vnodeSendMeterCfgMsg(int vnode, int sid) {
   pCfg->sid = htonl(sid);
   pMsg += sizeof(SMeterCfgMsg);
 
-  vnodeSendMsgToMgmt(pStart);
+  vnodeSendMsgToMgmt(pStart); //vnode发送消息给管理节点
 
   return 0;
 }

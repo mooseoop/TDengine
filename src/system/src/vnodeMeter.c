@@ -547,7 +547,7 @@ int vnodeRemoveMeterObj(int vnode, int sid) {
  * *param：指针变量，指向
  * sversion：commit数据version
  * *numOfInsertPoints：指针变量，
- * TSKEY：时间戳
+ * now：时间戳，插入commit任务的时间戳
  * 返回：int类型
  */
 int vnodeInsertPoints(SMeterObj *pObj, char *cont, int contLen, char source, void *param, int sversion,
@@ -555,16 +555,16 @@ int vnodeInsertPoints(SMeterObj *pObj, char *cont, int contLen, char source, voi
   int         expectedLen, i;
   short       numOfPoints;
   SSubmitMsg *pSubmit = (SSubmitMsg *)cont;   //commit任务内容
-  char *      pData;
+  char *      pData;  //指针变量，指向commit任务消息内容
   TSKEY       tsKey;
   int         cfile;
   int         points = 0;
   int         code = TSDB_CODE_SUCCESS;
-  SVnodeObj * pVnode = vnodeList + pObj->vnode;   //指向vnode节点对象
+  SVnodeObj * pVnode = vnodeList + pObj->vnode;   //指向操作vnode节点对象
 
   numOfPoints = htons(pSubmit->numOfRows);  //htons函数将一个无符号短整型数值转换为网络字节序，即大端模式(big-endian)
-  expectedLen = numOfPoints * pObj->bytesPerPoint + sizeof(pSubmit->numOfRows);
-  if (expectedLen != contLen) {
+  expectedLen = numOfPoints * pObj->bytesPerPoint + sizeof(pSubmit->numOfRows); //测量任务可能的字节长度
+  if (expectedLen != contLen) {//判断期望的插入任务长度和传入的长度是否一致
     dError("vid:%d sid:%d id:%s, invalid submit msg length:%d, expected:%d, bytesPerPoint: %d",
            pObj->vnode, pObj->sid, pObj->meterId, contLen, expectedLen, pObj->bytesPerPoint);
     code = TSDB_CODE_WRONG_MSG_SIZE;
@@ -573,8 +573,8 @@ int vnodeInsertPoints(SMeterObj *pObj, char *cont, int contLen, char source, voi
 
   // to guarantee time stamp is the same for all vnodes，确保所有vnode的时间戳相同  
   pData = pSubmit->payLoad; //commit消息的有效载荷
-  tsKey = now;
-  cfile = tsKey/pVnode->cfg.daysPerFile/tsMsPerDay[pVnode->cfg.precision];
+  tsKey = now;  //传入插入任务的时间戳
+  cfile = tsKey/pVnode->cfg.daysPerFile/tsMsPerDay[pVnode->cfg.precision];  //cfile = commit任务时间戳/vnode配置的每文件天数/每天毫秒数（或微妙）
   if (*((TSKEY *)pData) == 0) {
     for (i = 0; i < numOfPoints; ++i) {
       *((TSKEY *)pData) = tsKey++;
@@ -582,30 +582,31 @@ int vnodeInsertPoints(SMeterObj *pObj, char *cont, int contLen, char source, voi
     }
   }
 
-  if (numOfPoints >= (pVnode->cfg.blocksPerMeter - 2) * pObj->pointsPerBlock) {
+  if (numOfPoints >= (pVnode->cfg.blocksPerMeter - 2) * pObj->pointsPerBlock) { //submit的数据行数大于vnode的测量任务块的数据行数
     code = TSDB_CODE_BATCH_SIZE_TOO_BIG;
     dError("vid:%d sid:%d id:%s, batch size too big, it shall be smaller than:%d", pObj->vnode, pObj->sid,
            pObj->meterId, (pVnode->cfg.blocksPerMeter - 2) * pObj->pointsPerBlock);
     return code;
   }
 
-  SCachePool *pPool = (SCachePool *)pVnode->pCachePool;
+  SCachePool *pPool = (SCachePool *)pVnode->pCachePool; //pPool指针，指向vnode的缓存池
   if (pObj->freePoints < numOfPoints || pObj->freePoints < (pObj->pointsPerBlock << 1) ||
       pPool->notFreeSlots > pVnode->cfg.cacheNumOfBlocks.totalBlocks - 2) {
     code = TSDB_CODE_ACTION_IN_PROGRESS;
     dTrace("vid:%d sid:%d id:%s, cache is full, freePoints:%d, notFreeSlots:%d", pObj->vnode, pObj->sid, pObj->meterId,
            pObj->freePoints, pPool->notFreeSlots);
-    vnodeProcessCommitTimer(pVnode, NULL);
+    vnodeProcessCommitTimer(pVnode, NULL);  //vnode节点处理commit任务
     return TSDB_CODE_ACTION_IN_PROGRESS;
   }
 
   // FIXME: Here should be after the comparison of sversions.
-  if (pVnode->cfg.commitLog && source != TSDB_DATA_SOURCE_LOG) {
+  if (pVnode->cfg.commitLog && source != TSDB_DATA_SOURCE_LOG) {  //数据来源于commit日志
     if (pVnode->logFd < 0) return TSDB_CODE_INVALID_COMMIT_LOG;
-    code = vnodeWriteToCommitLog(pObj, TSDB_ACTION_INSERT, cont, contLen, sversion);
+    code = vnodeWriteToCommitLog(pObj, TSDB_ACTION_INSERT, cont, contLen, sversion);  //测量任务记录commit日志
     if (code != 0) return code;
   }
 
+  //数据结构发生变化
   if (pObj->sversion < sversion) {
     dTrace("vid:%d sid:%d id:%s, schema is changed, new:%d old:%d", pObj->vnode, pObj->sid, pObj->meterId, sversion,
            pObj->sversion);

@@ -61,6 +61,9 @@ enum _TSDB_DB_STATUS { TSDB_DB_STATUS_READY, TSDB_DB_STATUS_DROPPING, TSDB_DB_ST
 
 enum _TSDB_VN_STATUS { TSDB_VN_STATUS_READY, TSDB_VN_STATUS_DROPPING };
 
+/*
+ * Dnode对象结构体
+ */
 typedef struct {
   uint32_t   privateIp;
   int32_t    sid;
@@ -107,6 +110,9 @@ typedef struct {
   int32_t vgId;  // vnode group ID
 } SMeterGid;
 
+/*
+ * 表对象结构体
+ */
 typedef struct _tab_obj {
   char      meterId[TSDB_METER_ID_LEN + 1];
   uint64_t  uid;
@@ -139,6 +145,9 @@ typedef struct _tab_obj {
   // SSchema    schema[];
 } STabObj;
 
+/*
+ * vgroup对象结构体
+ */
 typedef struct _vg_obj {
   uint32_t        vgId;
   char            dbName[TSDB_DB_NAME_LEN];
@@ -158,6 +167,9 @@ typedef struct _vg_obj {
   STabObj **      meterList;
 } SVgObj;
 
+/*
+ * DB对象结构体
+ */
 typedef struct _db_obj {
   char    name[TSDB_DB_NAME_LEN + 1];
   int64_t createdTime;
@@ -177,6 +189,9 @@ typedef struct _db_obj {
   void *          vgTimer;
 } SDbObj;
 
+/*
+ * 用户对象结构体
+ */
 typedef struct _user_obj {
   char              user[TSDB_USER_LEN + 1];
   char              pass[TSDB_KEY_LEN];
@@ -223,6 +238,9 @@ typedef struct {
   pthread_mutex_t  mutex;
 } SAcctObj;
 
+/*
+ * connect对象结构体
+ */
 typedef struct _connObj {
   SAcctObj *       pAcct;
   SDbObj *         pDb;

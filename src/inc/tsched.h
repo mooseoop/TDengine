@@ -20,12 +20,15 @@
 extern "C" {
 #endif
 
+/*
+* 任务消息结构体
+*/
 typedef struct _sched_msg {
-  void (*fp)(struct _sched_msg *);
+  void (*fp)(struct _sched_msg *);    //函数指针，指向任务消息处理函数
 
   void (*tfp)(void *, void *);
 
-  char *msg;
+  char *msg;  //任务消息
   void *ahandle;
   void *thandle;
 } SSchedMsg;

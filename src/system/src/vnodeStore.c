@@ -32,7 +32,7 @@ int vnodeCreateMeterObjFile(int vnode);
 
 int        tsMaxVnode = -1;
 int        tsOpenVnodes = 0;
-SVnodeObj *vnodeList = NULL;  //vnode节点列表指针
+SVnodeObj *vnodeList = NULL;  //vnode节点列表指针，全局变量
 
 /*
  *  初始化vnode节点列表中的单个vnode节点

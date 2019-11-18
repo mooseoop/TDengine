@@ -13,6 +13,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * tao消息字符串资源
+ */
 char *taosMsg[] = {"null",
                    "registration",
                    "registration-rsp",
@@ -33,7 +36,7 @@ char *taosMsg[] = {"null",
                    "free-vnode-rsp",
                    "vpeer-cfg",
                    "vpeer-cfg-rsp",
-                   "meter-cfg",
+                   "meter-cfg",     //TSDB_MSG_TYPE_METER_CFG消息
                    "meter-cfg-rsp",
 
                    "vpeer-fwd",

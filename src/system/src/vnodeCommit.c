@@ -276,6 +276,9 @@ void vnodeCleanUpCommit(int vnode) {
   pthread_mutex_destroy(&(pVnode->logMutex));
 }
 
+/*
+* vnode记录commit日志
+*/
 int vnodeWriteToCommitLog(SMeterObj *pObj, char action, char *cont, int contLen, int sverion) {
   SVnodeObj *pVnode = vnodeList + pObj->vnode;
   if (pVnode->pWrite == NULL) return 0;

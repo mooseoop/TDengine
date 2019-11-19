@@ -46,6 +46,7 @@ int mgmtSendMsgToDnode(char *msg) {
 
 /*
  * 管理节点处理vnode节点发来的TSDB_MSG_TYPE_METER_CFG消息
+ * *cont:meter cfg消息
  */
 int mgmtProcessMeterCfgMsg(unsigned char *cont) {
   char *        pMsg, *pStart;

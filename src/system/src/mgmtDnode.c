@@ -25,7 +25,7 @@
 #include "tstatus.h"
 #pragma GCC diagnostic ignored "-Wunused-variable"
 
-SDnodeObj dnodeObj;
+SDnodeObj dnodeObj; //Dnode对象
 
 void mgmtSetDnodeMaxVnodes(SDnodeObj *pDnode) {
   int maxVnodes = pDnode->numOfCores * tsNumOfVnodesPerCore;

@@ -19,7 +19,7 @@
 #include "tschemautil.h"
 #pragma GCC diagnostic ignored "-Wunused-variable"
 
-void *       vgSdb = NULL;
+void *       vgSdb = NULL;  //指针变量，指向vgroup db
 int          tsVgUpdateSize;
 extern void *dbSdb;
 extern void *acctSdb;
@@ -96,6 +96,11 @@ int mgmtInitVgroups() {
   return 0;
 }
 
+/*
+ * dnode管理节点获取vgroup
+ * vgId：入参，vgroup id
+ * 返回：指针，指向vgourp对象
+ */
 SVgObj *mgmtGetVgroup(int vgId) { return (SVgObj *)sdbGetRow(vgSdb, &vgId); }
 
 void mgmtProcessVgTimer(void *handle, void *tmrId) {

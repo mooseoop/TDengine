@@ -74,6 +74,9 @@ typedef struct {
   uint64_t version[];
 } SSdbSync;
 
+/*
+ * sdbTable对象（系统数据库表）结构体
+ */
 typedef struct {
   SSdbHeader header;
   int        maxRows;
@@ -83,23 +86,26 @@ typedef struct {
   char       fn[128];
   int        keyType;
   uint32_t   autoIndex;
-  int64_t    numOfRows;
+  int64_t    numOfRows; //行计数
   int64_t    id;
   int64_t    size;
   void *     iHandle;
   int        fd;
   void *(*appTool)(char, void *, char *, int, int *);
-  pthread_mutex_t mutex;
+  pthread_mutex_t mutex;    //线程互斥锁
   SSdbUpdate *    update;
   int             numOfUpdates;
   int             updatePos;
 } SSdbTable;
 
+/*
+ * 系统数据库表的行元数据结构体
+ */
 typedef struct {
   int64_t id;
   int64_t offset;
   int     rowSize;
-  void *  row;
+  void *  row;    //系统数据库表的一行
 } SRowMeta;
 
 typedef struct {

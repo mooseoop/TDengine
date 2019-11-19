@@ -17,11 +17,11 @@
 #include <arpa/inet.h>
 #include "tschemautil.h"
 
-void *dbSdb = NULL;
+void *dbSdb = NULL; //全局指针变量，指向Sdb（系统数据库）对象
 int   tsDbUpdateSize;
 
-void *(*mgmtDbActionFp[SDB_MAX_ACTION_TYPES])(void *row, char *str, int size, int *ssize);
-void *mgmtDbActionInsert(void *row, char *str, int size, int *ssize);
+void *(*mgmtDbActionFp[SDB_MAX_ACTION_TYPES])(void *row, char *str, int size, int *ssize);  //（*mgmtDbActionFp），指向函数的指针，函数返回void类型指针
+void *mgmtDbActionInsert(void *row, char *str, int size, int *ssize); //返回void类型指针的函数
 void *mgmtDbActionDelete(void *row, char *str, int size, int *ssize);
 void *mgmtDbActionUpdate(void *row, char *str, int size, int *ssize);
 void *mgmtDbActionEncode(void *row, char *str, int size, int *ssize);
@@ -99,6 +99,11 @@ int mgmtInitDbs() {
   return 0;
 }
 
+/*
+ * 根据DB name返回DB obj对象
+ * *db：DB name
+ * 返回：指针变量，指向DB obj对象
+ */
 SDbObj *mgmtGetDb(char *db) { return (SDbObj *)sdbGetRow(dbSdb, db); }
 
 SDbObj *mgmtGetDbByMeterId(char *meterId) {
@@ -112,6 +117,11 @@ SDbObj *mgmtGetDbByMeterId(char *meterId) {
   return (SDbObj *)sdbGetRow(dbSdb, db);
 }
 
+/*
+ * 管理系统检查DB参数正确性
+ * *pCreate：指针指向要创建的DB消息配置对象
+ * 返回值：int型
+ */
 int mgmtCheckDbParams(SCreateDbMsg *pCreate) {
   // assign default parameters
   if (pCreate->maxSessions < 0) pCreate->maxSessions = tsSessionsPerVnode;      //
@@ -210,35 +220,41 @@ int mgmtCheckDbParams(SCreateDbMsg *pCreate) {
   return TSDB_CODE_SUCCESS;
 }
 
+/*
+ * 管理系统创建DB对象
+ * *pAcct：指针变量，指向创建DB的Acct账户对象
+ * *pCreate：指针变量，指向创建DB的消息对象
+ * 返回类型：int型
+ */
 int mgmtCreateDb(SAcctObj *pAcct, SCreateDbMsg *pCreate) {
   SDbObj *pDb;
 
-  int numOfDbs = sdbGetNumOfRows(dbSdb);
+  int numOfDbs = sdbGetNumOfRows(dbSdb);  //Db计数
   if (numOfDbs >= tsMaxDbs) {
     mWarn("numOfDbs:%d, exceed tsMaxDbs:%d", numOfDbs, tsMaxDbs);
     return TSDB_CODE_TOO_MANY_DATABSES;
   }
 
-  pDb = (SDbObj *)sdbGetRow(dbSdb, pCreate->db);
+  pDb = (SDbObj *)sdbGetRow(dbSdb, pCreate->db);  //从系统数据库表中获取db对象
   if (pDb != NULL) {
-    return TSDB_CODE_DB_ALREADY_EXIST;
+    return TSDB_CODE_DB_ALREADY_EXIST;  //DB已经存在
   }
 
-  int code = mgmtCheckDbParams(pCreate);
-  if (code != TSDB_CODE_SUCCESS) return code;
+  int code = mgmtCheckDbParams(pCreate);  //检查要创建DB对象的参数
+  if (code != TSDB_CODE_SUCCESS) return code; //检查不通过
 
-  assert(pCreate->daysToKeep1 <= pCreate->daysToKeep2 && pCreate->daysToKeep2 <= pCreate->daysToKeep);
+  assert(pCreate->daysToKeep1 <= pCreate->daysToKeep2 && pCreate->daysToKeep2 <= pCreate->daysToKeep);  //检查条件错误则终止程序
 
-  pDb = malloc(sizeof(SDbObj));
-  memset(pDb, 0, sizeof(SDbObj));
-  strcpy(pDb->name, pCreate->db);
-  strcpy(pCreate->acct, pAcct->user);
+  pDb = malloc(sizeof(SDbObj)); //给pDb动态分配内存
+  memset(pDb, 0, sizeof(SDbObj)); //初始化内存为0
+  strcpy(pDb->name, pCreate->db); //把DB name从Create Db消息赋值给DB对象
+  strcpy(pCreate->acct, pAcct->user); //给Create DB消息的acct赋值
   pDb->createdTime = taosGetTimestampMs();
-  pDb->cfg = *pCreate;
+  pDb->cfg = *pCreate;  //给DB配置对象赋值，就是Create DB消息指针的内容
 
-  if (sdbInsertRow(dbSdb, pDb, 0) < 0) {
+  if (sdbInsertRow(dbSdb, pDb, 0) < 0) {  //把DB对象插入到系统数据库表（sdbTable）中
     code = TSDB_CODE_SDB_ERROR;
-    tfree(pDb);
+    tfree(pDb);   //错误，是否DB对象
   }
 
   return code;

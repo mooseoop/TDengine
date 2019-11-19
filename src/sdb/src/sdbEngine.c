@@ -323,6 +323,11 @@ SRowMeta *sdbGetRowMeta(void *handle, void *key) {
   return pMeta;
 }
 
+/*
+ * 获取系统数据库表的行的元数据
+ * *handle：入参指针，指向SdbTable（系统数据库表）对象
+ * *key：入参指针，vgroup id，DB name
+ */
 void *sdbGetRow(void *handle, void *key) {
   SSdbTable *pTable = (SSdbTable *)handle;
   SRowMeta * pMeta;
@@ -330,7 +335,7 @@ void *sdbGetRow(void *handle, void *key) {
   if (handle == NULL) return NULL;
 
   pthread_mutex_lock(&pTable->mutex);
-  pMeta = (*sdbGetIndexFp[pTable->keyType])(pTable->iHandle, key);
+  pMeta = (*sdbGetIndexFp[pTable->keyType])(pTable->iHandle, key);    //根据keyType调用不同指针函数，返回指针，指向系统表的行的元数据
   pthread_mutex_unlock(&pTable->mutex);
 
   if (pMeta == NULL) return NULL;
@@ -338,8 +343,15 @@ void *sdbGetRow(void *handle, void *key) {
   return pMeta->row;
 }
 
-// row here must be encoded string (rowSize > 0) or the object it self (rowSize
-// = 0)
+/*
+ * 在系统数据库表（sdbTable）中插入一行（DB对象）
+ * *handle：指针指向sdbTable对象
+ * *row：指针指向DBobj对象
+ * rowSize：int型，行大小
+ * 返回值：int64，返回码，0为成功
+ * row here must be encoded string (rowSize > 0) or the object it self (rowSize
+ * = 0)
+ */
 int64_t sdbInsertRow(void *handle, void *row, int rowSize) {
   SSdbTable *pTable = (SSdbTable *)handle;
   SRowMeta   rowMeta;
@@ -914,4 +926,8 @@ void *sdbFetchRow(void *handle, void *pNode, void **ppRow) {
 
 int64_t sdbGetId(void *handle) { return ((SSdbTable *)handle)->id; }
 
+/*
+ * 从sdbTable获取行数，表示Db计数
+ * *handle：指向sdbTable对象
+ */
 int64_t sdbGetNumOfRows(void *handle) { return ((SSdbTable *)handle)->numOfRows; }

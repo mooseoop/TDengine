@@ -22,7 +22,7 @@ extern "C" {
 
 #include "tsdb.h"
 
-#define TSDB_CODE_SUCCESS                    0    //TD的成功返回码
+#define TSDB_CODE_SUCCESS                    0    //返回码，TD的成功返回码
 #define TSDB_CODE_ACTION_IN_PROGRESS         1    //进行中
 
 #define TSDB_CODE_LAST_SESSION_NOT_FINISHED  5
@@ -53,7 +53,7 @@ extern "C" {
 #define TSDB_CODE_INVALID_MSG_LEN            30
 #define TSDB_CODE_INVALID_DB                 31
 #define TSDB_CODE_INVALID_TABLE              32
-#define TSDB_CODE_DB_ALREADY_EXIST           33
+#define TSDB_CODE_DB_ALREADY_EXIST           33   //错误码，DB数据库已经存在
 #define TSDB_CODE_TABLE_ALREADY_EXIST        34
 #define TSDB_CODE_INVALID_USER               35
 #define TSDB_CODE_INVALID_ACCT               36
@@ -76,13 +76,13 @@ extern "C" {
 #define TSDB_CODE_WRONG_SCHEMA               53
 #define TSDB_CODE_NO_RESULT                  54
 #define TSDB_CODE_TOO_MANY_USERS             55
-#define TSDB_CODE_TOO_MANY_DATABSES          56
+#define TSDB_CODE_TOO_MANY_DATABSES          56   //错误码，超过最大DB数目
 #define TSDB_CODE_TOO_MANY_TABLES            57
 #define TSDB_CODE_TOO_MANY_DNODES            58
 #define TSDB_CODE_TOO_MANY_ACCTS             59
 #define TSDB_CODE_ACCT_ALREADY_EXIST         60
 #define TSDB_CODE_DNODE_ALREADY_EXIST        61
-#define TSDB_CODE_SDB_ERROR                  62
+#define TSDB_CODE_SDB_ERROR                  62    // 系统DB错误
 #define TSDB_CODE_METRICMETA_EXPIRED         63    // local cached metric-meta expired causes error in metric query
 #define TSDB_CODE_NOT_READY                  64    // peer is not ready to process data
 #define TSDB_CODE_MAX_SESSIONS               65    // too many sessions
@@ -152,8 +152,8 @@ extern "C" {
 #define TSDB_MSG_TYPE_FREE_VNODE_RSP   16
 #define TSDB_MSG_TYPE_VPEER_CFG        17
 #define TSDB_MSG_TYPE_VPEER_CFG_RSP    18
-#define TSDB_MSG_TYPE_METER_CFG        19
-#define TSDB_MSG_TYPE_METER_CFG_RSP    20
+#define TSDB_MSG_TYPE_METER_CFG        19     //测量配置任务消息
+#define TSDB_MSG_TYPE_METER_CFG_RSP    20     //测量配置任务响应消息
 
 #define TSDB_MSG_TYPE_VPEER_FWD        21
 #define TSDB_MSG_TYPE_VPEER_FWD_RSP    22
@@ -669,7 +669,7 @@ typedef struct {
  */
 typedef struct {
   uint32_t vnode;
-  uint32_t vgId;
+  uint32_t vgId;      //vgroup id
   uint8_t  status;
   uint8_t  dropStatus;
   uint8_t  accessState;
@@ -685,12 +685,12 @@ typedef struct {
 } SVnodeAccess;
 
 /*
- * vnode节点配置对象
+ * vnode节点配置对象/DB数据库配置对象/创建DB消息对象
  * NOTE: sizeof(SVnodeCfg) < TSDB_FILE_HEADER_LEN/4
  */
 typedef struct {
   char     acct[TSDB_USER_LEN];
-  char     db[TSDB_DB_NAME_LEN];
+  char     db[TSDB_DB_NAME_LEN];  //DB name
   uint32_t vgId;
   int32_t  maxSessions;   //vnode的最大会话数
   int32_t  cacheBlockSize;  //缓存块字节大小
@@ -700,6 +700,9 @@ typedef struct {
   } cacheNumOfBlocks;
   int32_t daysPerFile;  //每文件天数
 
+  /*
+  * 要求：daysToKeep1 <= daysToKeep2 and daysToKeep2 <= daysToKeep
+  */
   int32_t daysToKeep1;  //保持天数1
   int32_t daysToKeep2;  //保持条数2
   int32_t daysToKeep;   //保持天数

@@ -24,6 +24,9 @@
 
 #define MAX_STR_LEN 40
 
+/*
+ * Hash node对象结构体
+ */
 typedef struct _str_node_t {
   char                string[TSDB_METER_ID_LEN];
   int                 hash;
@@ -32,8 +35,11 @@ typedef struct _str_node_t {
   char                data[];
 } SHashNode;
 
+/*
+ * Hash 对象结构体（str类型）
+ */
 typedef struct {
-  SHashNode **hashList;
+  SHashNode **hashList; //指针变量，指向一个指向hash node链表的指针
   int         maxSessions;
   int         dataSize;
 } SHashObj;
@@ -147,6 +153,12 @@ void *sdbGetStrHashData(void *handle, void *key) {
   return NULL;
 }
 
+/*
+ * 初始化Str型hash对象
+ * maxSessions：最大对象数目
+ * dataSize：对象字节大小
+ * 返回：hash对象
+ */
 void *sdbOpenStrHash(int maxSessions, int dataSize) {
   SHashObj *pObj;
 
@@ -159,6 +171,7 @@ void *sdbOpenStrHash(int maxSessions, int dataSize) {
   pObj->maxSessions = maxSessions;
   pObj->dataSize = dataSize;
 
+  //初始化hash 对象的hash node链表
   pObj->hashList = (SHashNode **)malloc(sizeof(SHashNode *) * maxSessions);
   if (pObj->hashList == NULL) {
     free(pObj);

@@ -76,22 +76,23 @@ typedef struct {
 
 /*
  * sdbTable对象（系统数据库表）结构体
+ * 系统数据库表对象：db,meters,user,vgroups
  */
 typedef struct {
   SSdbHeader header;
-  int        maxRows;
+  int        maxRows; //系统数据表最大行
   int        dbId;
-  int32_t    maxRowSize;
-  char       name[TSDB_DB_NAME_LEN];
-  char       fn[128];
-  int        keyType;
+  int32_t    maxRowSize;  //系统数据表最大行存储大小
+  char       name[TSDB_DB_NAME_LEN];    //系统数据表名称，db，meters，user，vgroup
+  char       fn[128];   //系统数据表的目录和文件名，如：dir/db.db ; dir/user.db;
+  int        keyType;   //key类型
   uint32_t   autoIndex;
   int64_t    numOfRows; //行计数
   int64_t    id;
-  int64_t    size;
-  void *     iHandle;
-  int        fd;
-  void *(*appTool)(char, void *, char *, int, int *);
+  int64_t    size;    //系统数据表文件字节大小
+  void *     iHandle;   //指针变量，指向keyType对应的index索引初始化函数，函数返回的Hash对象
+  int        fd;  //打开系统数据表文件的文件句柄 
+  void *(*appTool)(char, void *, char *, int, int *);   //函数指针，指向系统数据表的处理函数，函数返回指针
   pthread_mutex_t mutex;    //线程互斥锁
   SSdbUpdate *    update;
   int             numOfUpdates;
@@ -99,13 +100,13 @@ typedef struct {
 } SSdbTable;
 
 /*
- * 系统数据库表的行元数据结构体
+ * 系统数据表的行元数据结构体
  */
 typedef struct {
   int64_t id;
   int64_t offset;
-  int     rowSize;
-  void *  row;    //系统数据库表的一行
+  int     rowSize;  //行存储字节
+  void *  row;      //系统数据库表的一行
 } SRowMeta;
 
 typedef struct {

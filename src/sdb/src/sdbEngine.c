@@ -31,11 +31,18 @@
 #include "sdbint.h"
 #include "tutil.h"
 
+//宏定义
 #define abs(x) (((x) < 0) ? -(x) : (x))
 
 extern char   version[];
 const int16_t sdbFileVersion = 0;
 
+/*
+ * 根据keyType初始化索引（index）函数
+ * maxRows：最大行数
+ * dataSize：占用字节数
+ * 返回：指针，指向对应类型的hash对象
+ */
 void *(*sdbInitIndexFp[])(int maxRows, int dataSize) = {sdbOpenStrHash, sdbOpenIntHash, sdbOpenIntHash};
 
 void *(*sdbAddIndexFp[])(void *handle, void *key, void *data) = {sdbAddStrHash, sdbAddIntHash, sdbAddIntHash};
@@ -66,6 +73,9 @@ void sdbFinishCommit(void *handle) {
   pTable->size += sizeof(sdbEcommit);
 }
 
+/*
+ * 打开系统数据表文件
+ */
 int sdbOpenSdbFile(SSdbTable *pTable) {
   struct stat fstat, ofstat;
   uint64_t    size;
@@ -94,7 +104,7 @@ int sdbOpenSdbFile(SSdbTable *pTable) {
     }
   }
 
-  pTable->fd = open(pTable->fn, O_RDWR | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+  pTable->fd = open(pTable->fn, O_RDWR | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO); //打开系统数据表文件
   if (pTable->fd < 0) {
     sdbError("failed to open file:%s", pTable->fn);
     return -1;
@@ -168,6 +178,9 @@ void sdbAddIntoUpdateList(SSdbTable *pTable, char type, char *row) {
   pTable->update[pTable->updatePos].row = row;
 }
 
+/*
+ * 从系统数据表文件初始化系统数据表
+ */
 int sdbInitTableByFile(SSdbTable *pTable) {
   SRowMeta rowMeta;
   int      numOfDels = 0;
@@ -277,6 +290,16 @@ sdb_exit1:
   return -1;
 }
 
+/*
+ * 系统数据库打开系统表
+ * maxRows：最大行数
+ * maxRowSize：最大行数大小
+ * *name：系统表名称，有“db”，“meters”，“user”，“vgroups”
+ * keyType：key类型：
+ * *directory：系统表存储目录
+ * *(*appTool):指针指向系统表操作处理函数
+ * 返回：系统数据表指针
+ */
 void *sdbOpenTable(int maxRows, int32_t maxRowSize, char *name, char keyType, char *directory,
                    void *(*appTool)(char, void *, char *, int, int *)) {
   SSdbTable *pTable = (SSdbTable *)malloc(sizeof(SSdbTable));
@@ -298,9 +321,10 @@ void *sdbOpenTable(int maxRows, int32_t maxRowSize, char *name, char keyType, ch
   pTable->appTool = appTool;
   sprintf(pTable->fn, "%s/%s.db", directory, pTable->name);
 
+  //根据keyType初始化索引
   if (sdbInitIndexFp[keyType] != NULL) pTable->iHandle = (*sdbInitIndexFp[keyType])(maxRows, sizeof(SRowMeta));
 
-  pthread_mutex_init(&pTable->mutex, NULL);
+  pthread_mutex_init(&pTable->mutex, NULL);   //初始化系统数据表对象的线程互斥锁
 
   if (sdbInitTableByFile(pTable) < 0) return NULL;
 
@@ -909,6 +933,12 @@ void sdbSaveSnapShot(void *handle) {
   fdatasync(pTable->fd);
 }
 
+/*
+ * 系统数据库表匹配到具体的行（DB数据库）
+ * *handle：指针指向系统数据库表对象
+ * *pNode：
+ * **PPRow：指针变量，指针匹配的DB数据库的指针
+ */
 void *sdbFetchRow(void *handle, void *pNode, void **ppRow) {
   SSdbTable *pTable = (SSdbTable *)handle;
   SRowMeta * pMeta;
@@ -916,10 +946,11 @@ void *sdbFetchRow(void *handle, void *pNode, void **ppRow) {
   *ppRow = NULL;
   if (pTable == NULL) return NULL;
 
+  //按照keyType匹配系统数据库表的行
   pNode = (*sdbFetchRowFp[pTable->keyType])(pTable->iHandle, pNode, (void **)&pMeta);
   if (pMeta == NULL) return NULL;
 
-  *ppRow = pMeta->row;
+  *ppRow = pMeta->row;  //匹配到的系统数据库表的行（业务DB数据库）
 
   return pNode;
 }

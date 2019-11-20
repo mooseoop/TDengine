@@ -67,8 +67,9 @@ int mgmtInitDbs() {
   void *  pNode = NULL;
   SDbObj *pDb = NULL;
 
-  mgmtDbActionInit();
+  mgmtDbActionInit(); //初始化管理节点DB操作函数
 
+  //系统数据库表初始化
   dbSdb = sdbOpenTable(tsMaxDbs, sizeof(SDbObj), "db", SDB_KEYTYPE_STRING, mgmtDirectory, mgmtDbAction);
   if (dbSdb == NULL) {
     mError("failed to init db data");

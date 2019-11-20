@@ -142,7 +142,7 @@ typedef struct _tab_obj {
                            // according to this metric
   char *pTagData;          // TSDB_METER_ID_LEN(metric_name)+
                            // tags_value1/tags_value2/tags_value3
-  struct _tab_obj *prev, *next; //prev，next指针变量，分别指向前一个和后一个tab obj对象
+  struct _tab_obj *prev, *next; //表对象链条，prev，next指针变量，分别指向前一个和后一个tab obj对象
   char *           pSql;  // pointer to SQL, for SC, null-terminated string
   char *           pReserve1;
   char *           pReserve2;
@@ -173,25 +173,25 @@ typedef struct _vg_obj {
 } SVgObj;
 
 /*
- * DB对象结构体
+ * DB数据库对象结构体
  */
 typedef struct _db_obj {
   char    name[TSDB_DB_NAME_LEN + 1];     //db name
   int64_t createdTime;        //db 创建时间戳
   SDbCfg  cfg;                //db 配置对象
-  int32_t numOfVgroups;
-  int32_t numOfTables;
-  int32_t numOfMetrics;
-  uint8_t vgStatus;
-  uint8_t dropStatus;
+  int32_t numOfVgroups;       //vgroup计数
+  int32_t numOfTables;        //table计数
+  int32_t numOfMetrics;       //查询/测量计数
+  uint8_t vgStatus;           //DB数据库的vgroup状态
+  uint8_t dropStatus;         //DB的drop状态
   char    reserved[16];
   char    updateEnd[1];
 
-  STabObj *       pMetric;  //
-  struct _db_obj *prev, *next;
+  STabObj *       pMetric;  //指针，指向数据库的表的链
+  struct _db_obj *prev, *next;  //指针，指向数据库链上的前一个/后一个
   SVgObj *        pHead;  // empty vgroup first
   SVgObj *        pTail;  // empty vgroup end
-  void *          vgTimer;
+  void *          vgTimer;  //指针，指向DB数据库的vgroup的定时器
 } SDbObj;
 
 /*

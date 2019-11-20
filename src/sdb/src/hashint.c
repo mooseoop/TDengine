@@ -32,11 +32,14 @@ typedef struct _long_hash_t {
   char                 data[];
 } SLongHash;
 
+/*
+ * Hash 对象结构体
+ */
 typedef struct {
-  SLongHash **longHashList;
-  mpool_h     longHashMemPool;
-  int         maxSessions;
-  int         dataSize;
+  SLongHash **longHashList;     //指针，指向Hash对象列表指针
+  mpool_h     longHashMemPool;  //hash对象内存池
+  int         maxSessions;   //对象数目
+  int         dataSize;      //对象字节大小
 } SHashObj;
 
 int sdbHashLong(void *handle, uint32_t ip) {
@@ -131,6 +134,12 @@ void *sdbGetIntHashData(void *handle, void *pKey) {
   return NULL;
 }
 
+/*
+ * 初始化int型hash对象
+ * maxSessions：对象数目
+ * dataSize：对象字节大小
+ * 返回：指针，指向Hash对象
+ */
 void *sdbOpenIntHash(int maxSessions, int dataSize) {
   SLongHash **longHashList;
   mpool_h     longHashMemPool;

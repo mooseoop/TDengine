@@ -28,10 +28,10 @@
  * Hash node对象结构体
  */
 typedef struct _str_node_t {
-  char                string[TSDB_METER_ID_LEN];
-  int                 hash;
-  struct _str_node_t *prev;
-  struct _str_node_t *next;
+  char                string[TSDB_METER_ID_LEN];    //hash的key信息
+  int                 hash;                         //根据key信息计算的hash值信息
+  struct _str_node_t *prev; //指针，指向前一个hash node对象
+  struct _str_node_t *next; //指针，指向后一个hash node对象
   char                data[];
 } SHashNode;
 
@@ -44,6 +44,12 @@ typedef struct {
   int         dataSize;
 } SHashObj;
 
+/*
+ * 计算string（key信息）的hash值
+ * *handle：指针，指向Hash对象
+ * *string：key信息字符串
+ * 返回：hash值
+ */
 int sdbHashString(void *handle, char *string) {
   SHashObj *   pObj = (SHashObj *)handle;
   unsigned int hash = 0, hashv;
@@ -70,6 +76,12 @@ int sdbHashString(void *handle, char *string) {
   return hash;
 }
 
+/*
+ * 在hash obj对象中增加str类型的hash值
+ * *handle：Hash Obj对象
+ * *key：key信息
+ * *pData：
+ */
 void *sdbAddStrHash(void *handle, void *key, void *pData) {
   int        hash;
   SHashNode *pNode;
@@ -129,6 +141,12 @@ void sdbDeleteStrHash(void *handle, void *key) {
   }
 }
 
+/*
+ * 根据Key信息获取Hash对象
+ * *handle：指针，指向Hash对象
+ * *key：指针，hash对象key信息
+ * 返回：hash node的data
+ */
 void *sdbGetStrHashData(void *handle, void *key) {
   int        hash;
   SHashNode *pNode;

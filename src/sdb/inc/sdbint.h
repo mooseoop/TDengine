@@ -60,7 +60,7 @@ typedef struct {
   uint64_t swVersion;
   int16_t  sdbFileVersion;
   char     reserved[6];
-  TSCKSUM  checkSum;
+  TSCKSUM  checkSum;    //校验和
 } SSdbHeader;
 
 typedef struct {
@@ -75,7 +75,7 @@ typedef struct {
 } SSdbSync;
 
 /*
- * sdbTable对象（系统数据库表）结构体
+ * sdbTable对象（系统数据表）结构体
  * 系统数据库表对象：db,meters,user,vgroups
  */
 typedef struct {
@@ -88,9 +88,9 @@ typedef struct {
   int        keyType;   //key类型
   uint32_t   autoIndex;
   int64_t    numOfRows; //行计数
-  int64_t    id;
+  int64_t    id;      //系统数据表行数据id
   int64_t    size;    //系统数据表文件字节大小
-  void *     iHandle;   //指针变量，指向keyType对应的index索引初始化函数，函数返回的Hash对象
+  void *     iHandle;   //指针，指向Hash对象，根据keyType对应的index索引初始化函数返回的Hash对象
   int        fd;  //打开系统数据表文件的文件句柄 
   void *(*appTool)(char, void *, char *, int, int *);   //函数指针，指向系统数据表的处理函数，函数返回指针
   pthread_mutex_t mutex;    //线程互斥锁
@@ -100,7 +100,7 @@ typedef struct {
 } SSdbTable;
 
 /*
- * 系统数据表的行元数据结构体
+ * 系统数据表的行数据结构体
  */
 typedef struct {
   int64_t id;
@@ -109,6 +109,9 @@ typedef struct {
   void *  row;      //系统数据库表的一行
 } SRowMeta;
 
+/*
+ * 系统表行头信息结构体
+ */
 typedef struct {
   int32_t delimiter;
   int32_t rowSize;

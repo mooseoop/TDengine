@@ -20,18 +20,21 @@
 void *dbSdb = NULL; //全局指针变量，指向Sdb（系统数据库）对象
 int   tsDbUpdateSize;
 
-void *(*mgmtDbActionFp[SDB_MAX_ACTION_TYPES])(void *row, char *str, int size, int *ssize);  //（*mgmtDbActionFp），指向函数的指针，函数返回void类型指针
-void *mgmtDbActionInsert(void *row, char *str, int size, int *ssize); //返回void类型指针的函数
-void *mgmtDbActionDelete(void *row, char *str, int size, int *ssize);
-void *mgmtDbActionUpdate(void *row, char *str, int size, int *ssize);
-void *mgmtDbActionEncode(void *row, char *str, int size, int *ssize);
-void *mgmtDbActionDecode(void *row, char *str, int size, int *ssize);
+void *(*mgmtDbActionFp[SDB_MAX_ACTION_TYPES])(void *row, char *str, int size, int *ssize);  // （*mgmtDbActionFp），指向函数的指针，函数返回void类型指针
+void *mgmtDbActionInsert(void *row, char *str, int size, int *ssize); // 返回void类型指针的函数，DB系统数据表插入数据
+void *mgmtDbActionDelete(void *row, char *str, int size, int *ssize); // DB系统数据表删除数据
+void *mgmtDbActionUpdate(void *row, char *str, int size, int *ssize); // DB系统数据表更新数据
+void *mgmtDbActionEncode(void *row, char *str, int size, int *ssize); // DB系统数据表编码数据
+void *mgmtDbActionDecode(void *row, char *str, int size, int *ssize); // DB系统数据表解码数据
 void *mgmtDbActionBeforeBatchUpdate(void *row, char *str, int size, int *ssize);
 void *mgmtDbActionBatchUpdate(void *row, char *str, int size, int *ssize);
 void *mgmtDbActionAfterBatchUpdate(void *row, char *str, int size, int *ssize);
 void *mgmtDbActionReset(void *row, char *str, int size, int *ssize);
 void *mgmtDbActionDestroy(void *row, char *str, int size, int *ssize);
 
+/*
+ * DB系统数据表操作初始化
+ */
 void mgmtDbActionInit() {
   mgmtDbActionFp[SDB_TYPE_INSERT] = mgmtDbActionInsert;
   mgmtDbActionFp[SDB_TYPE_DELETE] = mgmtDbActionDelete;
@@ -45,6 +48,9 @@ void mgmtDbActionInit() {
   mgmtDbActionFp[SDB_TYPE_DESTROY] = mgmtDbActionDestroy;
 }
 
+/*
+ * DB系统数据表操作指针函数
+ */
 void *mgmtDbAction(char action, void *row, char *str, int size, int *ssize) {
   if (mgmtDbActionFp[action] != NULL) {
     return (*(mgmtDbActionFp[action]))(row, str, size, ssize);

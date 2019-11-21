@@ -40,6 +40,9 @@ static FORCE_INLINE TSCKSUM taosCalcChecksum(TSCKSUM csi, const uint8_t *stream,
   return (*crc32c)(csi, stream, (size_t)ssize);
 }
 
+/*
+ * 计算校验和
+ */
 static FORCE_INLINE int taosCalcChecksumAppend(TSCKSUM csi, uint8_t *stream, uint32_t ssize) {
   if (ssize < sizeof(TSCKSUM)) return -1;
 

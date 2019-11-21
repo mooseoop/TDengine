@@ -38,17 +38,28 @@ extern char   version[];
 const int16_t sdbFileVersion = 0;
 
 /*
- * 根据keyType初始化索引（index）函数
+ * 函数指针，根据keyType调用不同索引初始化（index）函数
  * maxRows：最大行数
  * dataSize：占用字节数
- * 返回：指针，指向对应类型的hash对象
+ * 返回：指针，指向对应类型的hash obj对象
  */
 void *(*sdbInitIndexFp[])(int maxRows, int dataSize) = {sdbOpenStrHash, sdbOpenIntHash, sdbOpenIntHash};
 
+/*
+ * 函数指针，根据不同keyType调用不同函数
+ * 函数实现系统数据表增加索引功能
+ */
 void *(*sdbAddIndexFp[])(void *handle, void *key, void *data) = {sdbAddStrHash, sdbAddIntHash, sdbAddIntHash};
 
 void (*sdbDeleteIndexFp[])(void *handle, void *key) = {sdbDeleteStrHash, sdbDeleteIntHash, sdbDeleteIntHash};
 
+/*
+ * 函数指针，根据keyType检索不同的指针函数
+ * 函数实现系统数据表根据key检索到索引
+ * *handle：指针，指向系统数据表Hash对象
+ * *key：指针，系统数据表的key信息
+ * 返回：指针，指向不同系统数据表的对象数据
+ */
 void *(*sdbGetIndexFp[])(void *handle, void *key) = {sdbGetStrHashData, sdbGetIntHashData, sdbGetIntHashData};
 
 void (*sdbCleanUpIndexFp[])(void *handle) = {
@@ -60,8 +71,8 @@ void *(*sdbFetchRowFp[])(void *handle, void *ptr, void **ppRow) = {
 };
 
 SSdbTable *tableList[20];
-int        sdbNumOfTables;
-int64_t    sdbVersion;
+int        sdbNumOfTables;    //系统数据表计数
+int64_t    sdbVersion;  //系统数据表版本，每次变化，版本都变化
 
 void sdbFinishCommit(void *handle) {
   SSdbTable *pTable = (SSdbTable *)handle;
@@ -194,7 +205,7 @@ int sdbInitTableByFile(SSdbTable *pTable) {
   if (sdbOpenSdbFile(pTable) < 0) return -1;
 
   total_size = sizeof(SRowHead) + pTable->maxRowSize + sizeof(TSCKSUM);
-  SRowHead *rowHead = (SRowHead *)malloc(total_size);
+  SRowHead *rowHead = (SRowHead *)malloc(total_size); //动态分配行头内存
   if (rowHead == NULL) {
     sdbError("failed to allocate row head memory, sdb: %s", pTable->name);
     return -1;
@@ -204,7 +215,7 @@ int sdbInitTableByFile(SSdbTable *pTable) {
   while (1) {
     memset(rowHead, 0, total_size);
 
-    bytes = read(pTable->fd, rowHead, sizeof(SRowHead));
+    bytes = read(pTable->fd, rowHead, sizeof(SRowHead));  //从已打开的系统数据表文件读取 行头 个字节到内存中
     if (bytes < 0) {
       sdbError("failed to read sdb file: %s", pTable->fn);
       goto sdb_exit1;
@@ -318,7 +329,7 @@ void *sdbOpenTable(int maxRows, int32_t maxRowSize, char *name, char keyType, ch
   pTable->keyType = keyType;
   pTable->maxRows = maxRows;
   pTable->maxRowSize = maxRowSize;
-  pTable->appTool = appTool;
+  pTable->appTool = appTool;    //指针指向系统数据表操作函数指针
   sprintf(pTable->fn, "%s/%s.db", directory, pTable->name);
 
   //根据keyType初始化索引
@@ -336,6 +347,12 @@ void *sdbOpenTable(int maxRows, int32_t maxRowSize, char *name, char keyType, ch
   return pTable;
 }
 
+/*
+ * 根据key获取系统数据表的一行
+ * *handle：指针，指向系统数据表
+ * *key：指针，指向系统数据表的key信息
+ * 返回：指针，指向系统数据表的一行对象
+ */
 SRowMeta *sdbGetRowMeta(void *handle, void *key) {
   SSdbTable *pTable = (SSdbTable *)handle;
   SRowMeta * pMeta;
@@ -369,7 +386,7 @@ void *sdbGetRow(void *handle, void *key) {
 
 /*
  * 在系统数据库表（sdbTable）中插入一行（DB对象）
- * *handle：指针指向sdbTable对象
+ * *handle：指针，指向系统数据表对象
  * *row：指针指向DBobj对象
  * rowSize：int型，行大小
  * 返回值：int64，返回码，0为成功
@@ -732,6 +749,10 @@ int sdbBatchUpdateRow(void *handle, void *row, int rowSize) {
   return 0;
 }
 
+/*
+ * 关闭系统数据表
+ * *handle：指针变量，指向要关闭的系统数据表对象
+ */
 void sdbCloseTable(void *handle) {
   SSdbTable *pTable = (SSdbTable *)handle;
   void *     pNode = NULL;
@@ -742,19 +763,19 @@ void sdbCloseTable(void *handle) {
   while (1) {
     pNode = sdbFetchRow(handle, pNode, &row);
     if (row == NULL) break;
-    (*(pTable->appTool))(SDB_TYPE_DESTROY, row, NULL, 0, NULL);
+    (*(pTable->appTool))(SDB_TYPE_DESTROY, row, NULL, 0, NULL);     //操作释放系统数据表
   }
 
   if (sdbCleanUpIndexFp[pTable->keyType]) (*sdbCleanUpIndexFp[pTable->keyType])(pTable->iHandle);
 
-  if (pTable->fd) tclose(pTable->fd);
+  if (pTable->fd) tclose(pTable->fd);     //关闭系统数据表文件句柄
 
-  pthread_mutex_destroy(&pTable->mutex);
+  pthread_mutex_destroy(&pTable->mutex);  //系统数据表线程互斥锁销毁
 
-  sdbNumOfTables--;
+  sdbNumOfTables--;     //系统数据表统计计数
   sdbTrace("table:%s is closed, id:%ld numOfTables:%d", pTable->name, pTable->id, sdbNumOfTables);
 
-  tfree(pTable->update);
+  tfree(pTable->update);  //释放内存
   tfree(pTable);
 }
 
@@ -855,8 +876,11 @@ void sdbResetTable(SSdbTable *pTable) {
   sdbTrace("table:%s is updated, sdbVerion:%ld id:%ld", pTable->name, sdbVersion, pTable->id);
 }
 
-// TODO: A problem here : use snapshot file to sync another node will cause
-// problem
+/*
+ *  系统数据表保存快照
+ *  *handle：系统数据表对象
+ *  TODO: A problem here : use snapshot file to sync another node will cause problem
+ */
 void sdbSaveSnapShot(void *handle) {
   SSdbTable *pTable = (SSdbTable *)handle;
   SRowMeta * pMeta;

@@ -50,6 +50,11 @@ void mgmtDbActionInit() {
 
 /*
  * DB系统数据表操作指针函数
+ * action：对系统数据表的操作类型
+ * *row：指针，指向系统数据表的row
+ * *str：指针，指向字符串，系统数据表row的描述
+ * size：
+ * *ssize：指针，指向
  */
 void *mgmtDbAction(char action, void *row, char *str, int size, int *ssize) {
   if (mgmtDbActionFp[action] != NULL) {
@@ -69,13 +74,16 @@ void mgmtGetAcctStr(char *src, char *dest) {
   *dest = 0;
 }
 
+/*
+ * 初始化DB系统数据表
+ */
 int mgmtInitDbs() {
   void *  pNode = NULL;
   SDbObj *pDb = NULL;
 
   mgmtDbActionInit(); //初始化管理节点DB操作函数
 
-  //系统数据库表初始化
+  //初始化db的系统数据表
   dbSdb = sdbOpenTable(tsMaxDbs, sizeof(SDbObj), "db", SDB_KEYTYPE_STRING, mgmtDirectory, mgmtDbAction);
   if (dbSdb == NULL) {
     mError("failed to init db data");
@@ -770,6 +778,11 @@ int mgmtRetrieveDbs(SShowObj *pShow, char *data, int rows, SConnObj *pConn) {
   return numOfRows;
 }
 
+/*
+ * 管理节点，DB系统数据表增加一行（新增一个DB数据库）
+ * *row：指针，指向DB数据库对象，要在DB系统数据表增加的行信息
+ * 返回：null
+ */
 void *mgmtDbActionInsert(void *row, char *str, int size, int *ssize) {
   SDbObj *pDb = (SDbObj *)row;
 
@@ -793,25 +806,36 @@ void *mgmtDbActionDelete(void *row, char *str, int size, int *ssize) {
 void *mgmtDbActionUpdate(void *row, char *str, int size, int *ssize) {
   return mgmtDbActionReset(row, str, size, ssize);
 }
+
+/*
+ * db系统数据表 编码操作
+ * *row：指针参数，指向DB数据库对象
+ * *str：指针参数，指向DB数据库的str描述
+ */
 void *mgmtDbActionEncode(void *row, char *str, int size, int *ssize) {
   SDbObj *pDb = (SDbObj *)row;
   int     tsize = pDb->updateEnd - (char *)pDb;
   if (size < tsize) {
     *ssize = -1;
   } else {
-    memcpy(str, pDb, tsize);
+    memcpy(str, pDb, tsize);  //内存拷贝，从pDb拷贝tsize个字节到str
     *ssize = tsize;
   }
 
   return NULL;
 }
+
+/*
+ * db系统数据表 解码操作：根据str对象创建出系统数据表的db对象
+ * 返回：系统数据表的db对象
+ */
 void *mgmtDbActionDecode(void *row, char *str, int size, int *ssize) {
   SDbObj *pDb = (SDbObj *)malloc(sizeof(SDbObj));
   if (pDb == NULL) return NULL;
   memset(pDb, 0, sizeof(SDbObj));
 
   int tsize = pDb->updateEnd - (char *)pDb;
-  memcpy(pDb, str, tsize);
+  memcpy(pDb, str, tsize);  //内存拷贝，从str拷贝tsize个字节到pDb
 
   return (void *)pDb;
 }
@@ -821,7 +845,7 @@ void *mgmtDbActionAfterBatchUpdate(void *row, char *str, int size, int *ssize) {
 void *mgmtDbActionReset(void *row, char *str, int size, int *ssize) {
   SDbObj *pDb = (SDbObj *)row;
   int     tsize = pDb->updateEnd - (char *)pDb;
-  memcpy(pDb, str, tsize);
+  memcpy(pDb, str, tsize);  //内存拷贝，从str拷贝tsize个字节到pDb
 
   return NULL;
 }

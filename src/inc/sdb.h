@@ -43,6 +43,7 @@ extern SIpList *pSdbPublicIpList;
 
 extern void (*sdbWorkAsMasterCallback)();  // this function pointer will be set by taosd
 
+// 系统数据表key类型枚举
 enum _keytype {
   SDB_KEYTYPE_STRING, SDB_KEYTYPE_UINT32, SDB_KEYTYPE_AUTO, SDB_KEYTYPE_RECYCLE, SDB_KEYTYPE_MAX
 };

@@ -348,10 +348,10 @@ void *sdbOpenTable(int maxRows, int32_t maxRowSize, char *name, char keyType, ch
 }
 
 /*
- * 根据key获取系统数据表的一行
+ * 根据key获取系统数据表一行元数据对象（含行的元数据）
  * *handle：指针，指向系统数据表
  * *key：指针，指向系统数据表的key信息
- * 返回：指针，指向系统数据表的一行对象
+ * 返回：指针，指向系统数据表的一行元数据对象
  */
 SRowMeta *sdbGetRowMeta(void *handle, void *key) {
   SSdbTable *pTable = (SSdbTable *)handle;
@@ -365,9 +365,10 @@ SRowMeta *sdbGetRowMeta(void *handle, void *key) {
 }
 
 /*
- * 获取系统数据库表的行的元数据
+ * 获取系统数据库表的一行的对象
  * *handle：入参指针，指向SdbTable（系统数据库表）对象
- * *key：入参指针，vgroup id，DB name
+ * *key：指针，指向系统数据表的key信息，入参指针，vgroup id，DB name
+ * 返回：指针，指向获取的系统数据表的一行的对象
  */
 void *sdbGetRow(void *handle, void *key) {
   SSdbTable *pTable = (SSdbTable *)handle;
@@ -387,11 +388,10 @@ void *sdbGetRow(void *handle, void *key) {
 /*
  * 在系统数据库表（sdbTable）中插入一行（DB对象）
  * *handle：指针，指向系统数据表对象
- * *row：指针指向DBobj对象
- * rowSize：int型，行大小
+ * *row：指针，指向要在系统数据表中增加的对象，可以时DBobj对象，meters，user，vgroup
+ * rowSize：int型，要增加的对象的字节大小，为0表示数据表插入的对象已经创建了
  * 返回值：int64，返回码，0为成功
- * row here must be encoded string (rowSize > 0) or the object it self (rowSize
- * = 0)
+ * row here must be encoded string (rowSize > 0) or the object it self (rowSize * = 0)
  */
 int64_t sdbInsertRow(void *handle, void *row, int rowSize) {
   SSdbTable *pTable = (SSdbTable *)handle;
@@ -407,29 +407,30 @@ int64_t sdbInsertRow(void *handle, void *row, int rowSize) {
   if ((pTable->keyType != SDB_KEYTYPE_AUTO) || *((int64_t *)row))
     if (sdbGetRow(handle, row)) return -1;
 
+  //系统数据表的总大小 = 系统数据表表头大小 + 最大行的字节大小 + 校验和字节大小
   total_size = sizeof(SRowHead) + pTable->maxRowSize + sizeof(TSCKSUM);
-  SRowHead *rowHead = (SRowHead *)malloc(total_size);
+  SRowHead *rowHead = (SRowHead *)malloc(total_size); //指针，指向动态分配内存的系统数据表的表头
   if (rowHead == NULL) {
     sdbError("failed to allocate row head memory, sdb: %s", pTable->name);
     return -1;
   }
-  memset(rowHead, 0, total_size);
+  memset(rowHead, 0, total_size); //初始化动态分配的内存
 
   if (rowSize == 0) {  // object is created already
     pObj = row;
   } else {  // encoded string, to create object
-    pObj = (*(pTable->appTool))(SDB_TYPE_DECODE, NULL, row, rowSize, NULL);
+    pObj = (*(pTable->appTool))(SDB_TYPE_DECODE, NULL, row, rowSize, NULL); //创建要插入的系统数据表的一个对象，pObj指针指向创建的系统数据表对象（db，meter，user，vgroup）
   }
   (*(pTable->appTool))(SDB_TYPE_ENCODE, pObj, rowHead->data, pTable->maxRowSize, &(rowHead->rowSize));
   assert(rowHead->rowSize > 0 && rowHead->rowSize <= pTable->maxRowSize);
 
-  pthread_mutex_lock(&pTable->mutex);
+  pthread_mutex_lock(&pTable->mutex);   //线程互斥锁加锁
 
   pTable->id++;
   sdbVersion++;
-  if (pTable->keyType == SDB_KEYTYPE_AUTO) {
+  if (pTable->keyType == SDB_KEYTYPE_AUTO) { // 自增型key
     // TODO: here need to change
-    *((uint32_t *)pObj) = ++pTable->autoIndex;
+    *((uint32_t *)pObj) = ++pTable->autoIndex;  //自增型key的索引增加
     (*(pTable->appTool))(SDB_TYPE_ENCODE, pObj, rowHead->data, pTable->maxRowSize, &(rowHead->rowSize));
   }
 
@@ -489,7 +490,13 @@ int64_t sdbInsertRow(void *handle, void *row, int rowSize) {
   return id;
 }
 
-// row here can be object or null-terminated string
+/*
+ * 从系统数据表中删除一行
+ * *handle：指针，指向系统数据表对象
+ * *row：指针，指向要删除的row信息，可以是一个对象或者以null终止的字符串
+ * 返回：错误码信息
+ * row here can be object or null-terminated string
+ */
 int sdbDeleteRow(void *handle, void *row) {
   SSdbTable *pTable = (SSdbTable *)handle;
   SRowMeta * pMeta = NULL;
@@ -959,9 +966,9 @@ void sdbSaveSnapShot(void *handle) {
 
 /*
  * 系统数据库表匹配到具体的行（DB数据库）
- * *handle：指针指向系统数据库表对象
+ * *handle：指针，指向系统数据库表对象
  * *pNode：
- * **PPRow：指针变量，指针匹配的DB数据库的指针
+ * **PPRow：指针，指向匹配到的系统数据表对象的指针
  */
 void *sdbFetchRow(void *handle, void *pNode, void **ppRow) {
   SSdbTable *pTable = (SSdbTable *)handle;
@@ -972,7 +979,7 @@ void *sdbFetchRow(void *handle, void *pNode, void **ppRow) {
 
   //按照keyType匹配系统数据库表的行
   pNode = (*sdbFetchRowFp[pTable->keyType])(pTable->iHandle, pNode, (void **)&pMeta);
-  if (pMeta == NULL) return NULL;
+  if (pMeta == NULL) return NULL; //没有匹配到系统数据表的具体行
 
   *ppRow = pMeta->row;  //匹配到的系统数据库表的行（业务DB数据库）
 

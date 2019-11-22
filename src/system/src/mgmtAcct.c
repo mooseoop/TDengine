@@ -18,7 +18,7 @@
 #include "mgmt.h"
 #include "tschemautil.h"
 
-SAcctObj acctObj;
+SAcctObj acctObj; //账户对象
 
 int mgmtAddDbIntoAcct(SAcctObj *pAcct, SDbObj *pDb) {
   pthread_mutex_lock(&pAcct->mutex);
